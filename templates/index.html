@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block body %}
+    {% for bet in bets%}
+		<a href="{{url_for('main.line_page', line=bet)}}">{{bet}}</a>
+		<br>
+	{%endfor%}
+{% endblock %}
