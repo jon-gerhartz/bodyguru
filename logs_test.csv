@@ -1,0 +1,3 @@
+id,workout_name,feedback_data,created_at
+a8aa5cfd-56ac-4153-af7c-187257b557ee,test,"{""Chest_Press"":{""reps"":""4"",""feel"":""1"",""weight"":""40""},""Hip_Swings"":{""reps"":""5"",""feel"":""2"",""weight"":""40""}}",2023-11-13 17:36:35.607539
+3e112793-e076-4db3-b0ab-3deea46438d2,test,"{""Chest_Press"":{""reps"":""5"",""feel"":""2"",""weight"":""70""},""Hip_Swings"":{""reps"":""5"",""feel"":""2"",""weight"":""55""}}",2023-11-13 22:07:30.806869

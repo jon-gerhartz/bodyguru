@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+	<div class='row top-div'>
+		<div class='col'>
+			<h1>{{log['workout_name'][0]}}</h1>
+			<p>{{log['completed_at'][0]|fmt_dt_str("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
+				)}}</p>
+		</div>
+	</div>
+	<br>
+	<div class='row'>
+		{% set feedback_data = log['feedback_data_json'][0] %}
+		<div class='col'>
+			{% for exercise in feedback_data.keys() %}
+			<h5>{{exercise|capitalize()|replace('_', ' ')}}</h5>
+			<ul>
+				{% set exercise_data = feedback_data[exercise] %}
+				{% for data_point in exercise_data.keys() %}
+					<li>{{data_point}}:  {{exercise_data[data_point]}}</li>
+				{% endfor %}
+			</ul>
+			{% endfor %}
+		</div>
+	</div>
+	<br>
+	<div class='row'>
+		<div class='col'>
+			<button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteLog">Delete Log</button>
+		</div>
+	</div>
+</div>
+<div class="modal" tabindex="-1" id="deleteLog">
+	<div class="modal-dialog">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title">Delete Log</h5>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<form action="{{url_for('main.delete_log', log_id=log['id'][0])}}" method="post" enctype="multipart/form-data" >
+			<div class="modal-body">
+				<p>Are you sure you want to delete {{log['workout_name'][0]}} {{log['completed_at'][0]|fmt_dt_str("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
+					)}}</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				<button type="submit" class="btn btn-danger">Delete</button>
+			</div>
+		</form>
+	  </div>
+	</div>
+  </div>
+{% endblock %}

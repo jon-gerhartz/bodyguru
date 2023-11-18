@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+	<div class='row top-div'>
+		<div class='col'>
+			<h1>Workouts</h1>
+			<p>Create, edit and execute your custom workouts</p>
+		</div>
+	</div>
+	<br>
+	<div class='row'>
+		<div class='col-sm-2 side-div', id='filterDiv'>
+			<h3>Filter Results</h3>
+		</div>
+		<div class='col-sm-8'>
+			{% for i, v in workouts.iterrows() %}
+				<div id="{{v['name']}}" class='row' style='padding-bottom: 15px;'>
+					<div class="card" style="border:none;background-color: #f5f5f5;">
+						<div class="card-body">
+							<h5 class="card-title" name="{{v['name']}}" parentId="{{v['name']}}" searchtag='resultData'>{{v['name']}}</h5>
+							<p class="card-text">{{v['description']}}</p>
+							<span class="badge text-bg-dark" tag='type' parentId="{{v['name']}}">{{v['type']}}</span>
+							<br>
+							<br>
+							<a href="{{url_for('main.workout_details', workout_id=v['id'])}}" class="card-link">See Details</a>
+						</div>
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+		<div class='col-sm-2'>
+			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWorkoutModal">
+			Add Workout
+			</button>
+		</div>
+	</div>
+</div>
+<div class="modal" id="createWorkoutModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Create a New Workout</h1>
+      </div>
+      <div class="modal-body">
+				<form action="{{url_for('main.workouts')}}" method="post" enctype="multipart/form-data">
+					<div class="mb-3">
+						<label for="name" class="form-label">Workout Name</label>
+						<input type="text" class="form-control" id="name" name="name">
+					</div>
+					<div class="mb-3">
+						<select class="form-select" aria-label="Default select example" id="workoutType" name="type">
+						</select>
+					</div>
+					<div class="mb-3">
+						<label for="description" class="form-label">Description</label>
+						<textarea type="text" class="form-control" id="description" name="description"></textarea>
+					</div>
+					<div id='workoutDataInputLanding'>
+						<p>Num Sets:</p>
+						<p id='numSets'>0</p>
+						<div class='row'>
+							<div class='col-3'>
+								<button type="button" class="btn btn-secondary" onclick="createTextAreaDiv('{{url_for('main.exercises')}}')">Add Set</button>
+							</div>
+							<div class='col-9'>
+								<button type="button" class="btn btn-warning" onclick="removeTextAreaDiv()">Remove Set</button>
+							</div>
+							<input type="hidden" class="form-control" id="workoutData" name="workout_data">
+						</div>
+						<br>
+						<br>
+					</div>
+					<button type="submit" class="btn btn-primary">Submit</button>
+				</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript" src="{{url_for('static', filename='js/scripts.js')}}"></script>
+<script>
+	async function createTextAreaDiv(url) {
+		const formdiv = document.createElement('div')
+		formdiv.classList.add('mb-3')
+		const setCount = document.getElementById('numSets').innerHTML
+		if (setCount == 0) {
+			count = 0
+		}
+		const divid = 'div_set_' + count
+		formdiv.setAttribute('id', divid)
+
+		const setTitle = document.createElement('h5')
+		const setTitleValue = 'Set ' + (count + 1)
+		setTitle.innerHTML = setTitleValue
+		formdiv.appendChild(setTitle)
+
+		const setList = document.createElement('ol')
+		setListId = 'set_list_' + count
+		setList.setAttribute('id', setListId)
+		formdiv.appendChild(setList)
+
+		const input = document.createElement('input')
+		input.classList.add('dropdown')
+		const inputid = 'input_set_' + count
+		input.setAttribute('id', inputid)
+		input.setAttribute('name', inputid)
+		input.setAttribute('placeholder', 'Add exercise to set...')
+		input.setAttribute('count', count)
+		optionsid = 'option_dropdown_' + count
+		const inputOnclickAtrr = `toggleDropdown(${optionsid}.id)`
+		input.setAttribute('onclick', inputOnclickAtrr)
+		input.setAttribute('onkeyup', 'filterOptionsList(this)')
+		formdiv.appendChild(input)
+
+		const resp = await fetch(url)
+		const exercises = await resp.json() 
+		const data = await exercises.data	
+		const length = await data.length
+
+		const options = document.createElement('div')
+		options.classList.add('dropdown-content', 'col')
+		options.setAttribute('id', optionsid)
+		for (let i = 0; i< length; i++) {
+			const optionDiv = document.createElement('div')
+			optionDiv.classList.add('d-flex', 'flex-row')
+			optionDivId = 'option_div_' + i
+			optionDiv.setAttribute('id', optionDivId)
+			const option = document.createElement('input')
+			option.classList.add('form-check-input')
+			option.setAttribute('type', 'checkbox')
+			optionid = 'option_' + i
+			option.setAttribute('id', optionid)
+			option.setAttribute('onchange', 'addExerciseToSetList(this)')
+			option.setAttribute('set_count', count)
+			option.setAttribute('count', i)
+			const label = document.createElement('label')
+			label.classList.add('form-check-label')
+			label.setAttribute('for', optionsid)
+			const labelId = 'label_' + optionid
+			label.setAttribute('id', labelId)
+			const exerciseData =  await data[i]
+			label.innerHTML = exerciseData.name
+			optionDiv.appendChild(option)
+			optionDiv.appendChild(label)
+			options.appendChild(optionDiv)
+	
+			
+		}
+		formdiv.appendChild(options)
+		const land = document.getElementById('workoutDataInputLanding')
+    land.appendChild(formdiv);
+    count = count + 1
+    document.getElementById('numSets').innerHTML = count
+}
+</script>
+
+<script>
+	function toggleDropdown(id) {
+  	document.getElementById(id).classList.toggle("show");
+}
+</script>
+<script>
+	function removeTextAreaDiv() {
+		const setCount = document.getElementById('numSets').innerHTML
+		count = setCount - 1
+		const textId = 'div_set_' + (count)
+		const element = document.getElementById(textId)
+		element.remove()
+		document.getElementById('numSets').innerHTML = count
+		updateSetDataObject()
+	}
+</script>
+
+<script>
+	window.onclick = function(event) {
+  if (!event.target.matches('.dropdown') && !event.target.matches('.dropdown-content') && !event.target.matches('.form-check-input')) {
+    var dropdowns = document.getElementsByClassName("dropdown-content");
+    var i;
+    for (i = 0; i < dropdowns.length; i++) {
+      var openDropdown = dropdowns[i];
+      if (openDropdown.classList.contains('show')) {
+        openDropdown.classList.remove('show');
+      }
+    }
+  }
+}
+</script>
+<script>
+	function filterOptionsList(ele) {
+		const query = ele.value.toUpperCase()
+		const queryLen = query.length
+		const divId = 'option_dropdown_' + ele.getAttribute('count')
+		const div = document.getElementById(divId)
+		const divChildCount = div.childElementCount
+		for (i = 0; i < divChildCount; i++){
+			optionId = '#option_' + i
+			option = div.querySelector(optionId)
+			labelId = '#label_option_' + i
+			label = div.querySelector(labelId)
+			labelValue = label.textContent.toUpperCase()
+			if (labelValue.indexOf(query) == 0) {
+				option.style.display = "";
+				label.style.display = "";
+			} else {
+				option.style.display = 'none';
+				label.style.display = 'none';
+			}
+		}
+	}
+</script>
+<script>
+	function addExerciseToSetList(ele) {
+		const checked = ele.checked
+		const set_count = ele.getAttribute('set_count')
+		const count = ele.getAttribute('count')
+		const setListId = 'set_list_' + set_count
+		const setList = document.getElementById(setListId)
+		const liList = setList.getElementsByTagName('li')
+		const divId = 'option_dropdown_' + set_count
+		const div = document.getElementById(divId)
+		labelId = '#label_option_' + count
+		label = div.querySelector(labelId)
+		labelValue = label.textContent
+		if (checked) {
+			li = document.createElement('li')
+			li.innerHTML = labelValue
+			setList.appendChild(li);
+
+		} else {
+			for (i = 0; i < liList.length; i++){ 
+				if (labelValue == liList[i].textContent) {
+					liList[i].remove();
+				}
+			}
+		}
+		updateSetDataObject()
+}
+</script>
+<script>
+	function updateSetDataObject(){
+		setsNodeList = document.querySelectorAll('[id^=set_list]')
+		sets = Array.from(setsNodeList)
+		var json = {};
+		for (i = 0; i < sets.length; i++){
+			setNum = i + 1
+			set = sets[i]
+			exercises = set.getElementsByTagName('li')
+			setExercises = []
+			for (j = 0; j < exercises.length;j++) {
+				exerciseName = exercises[j].innerHTML
+				setExercises.push(exerciseName)
+			}
+			json[setNum] = setExercises
+		}
+		document.getElementById('workoutData').value = JSON.stringify(json)
+	};
+	createFilters({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv');
+	getOptions("{{url_for('main.workout_types')}}", "workoutType", false, false, "id");
+</script>
+{% endblock %}

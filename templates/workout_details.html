@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+	<div class='row top-div'>
+		<div class='col'>
+			<h1>{{workout['name'][0]}}</h1>
+			<p>{{workout['description'][0]}}</p>
+		</div>
+	</div>
+	<br>
+	<div class='row'>
+		<div class='col'>
+			{% for set in workout_data %}
+				<div class='row'>
+					<div class='col'>
+						<h4>Set {{loop.index}}</h4>
+						<ol>
+							{% for exercise in workout_data[set] %}
+								<li>{{exercise}}</li>
+							{% endfor %}
+						</ol>
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+	</div>
+	<br>
+	<div class='row'>
+		<div class='col'>
+			{% if workout['is_default_workout'][0] == 1 %}
+				<button type="button" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Cannot delete default workout">Delete Workout</button>
+			{% else %}
+				<button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteWorkout">Delete Workout</button>
+			{% endif %}
+		</div>
+	</div>
+</div>
+<div class="modal" tabindex="-1" id="deleteWorkout">
+	<div class="modal-dialog">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title">Delete Workout</h5>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<form action="{{url_for('main.delete_workout', workout_id=workout['id'][0])}}" method="post" enctype="multipart/form-data" >
+			<div class="modal-body">
+				<p>Are you sure you want to delete {{workout['name'][0]}}</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				<button type="submit" class="btn btn-danger">Delete</button>
+			</div>
+		</form>
+	  </div>
+	</div>
+  </div>
+{% endblock %}
+{% block scripts %}
+<script>
+	const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+	const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))		
+</script>
+{% endblock %}

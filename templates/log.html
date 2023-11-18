@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+	<div class='row top-div'>
+		<div class='col'>
+			<h1>Workout Log</h1>
+			<p>Review past workouts and progress here</p>
+		</div>
+	</div>
+	<br>
+	<div class='row'>
+		<div class='col-sm-2 side-div' id='filterDiv'>
+			<h3>Filter Results</h3>
+		</div>
+		<div class='col-sm-8'>
+			<table class='table'>
+				<tr>
+						<th>Date Completed</th>
+						<th>Workout</th>
+						<th>Details</th>
+				</tr>
+
+				{% for i, v in logs.iterrows() %}
+					<tr id="{{i}}">
+						<td tag="created_at" parentId="{{i}}">{{v['completed_at']|fmt_dt_str("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
+							)}}</td>
+						<td>{{v['workout_name']|capitalize()}}</td>
+						<td><a href="{{url_for('main.log_details', log_id=v['id'])}}">See More</a></td>
+					</tr>
+							</div>
+						</div>
+					</div>
+				{% endfor %}
+		</table>
+		</div>
+		<div class='col-sm-2'>
+			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createExercise">
+			Log Workout
+			</button>
+		</div>
+	</div>
+</div>
+<div class="modal modal-lg fade" id="createExercise" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Add Log</h1>
+      </div>
+      <div class="modal-body">
+		<form action="{{url_for('main.logs')}}" method="post" enctype="multipart/form-data" id='workoutFeedbackForm' onsubmit="addFeedbackJsonInput(this)">
+			<div class="mb-3">
+				<div>
+					<label for="workout" class="form-label">Workout name</label>
+					<select class="form-select" aria-label="Default select example" id="workout" name="workout_id" onchange="createFeedbackForm(this)">
+					</select>
+				</div>
+				<br>
+				<div class="form-check">
+					<input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" onchange="togglePastDateInput()">
+					<label class="form-check-label" for="flexCheckDefault">
+					  Add past workout
+					</label>
+				</div>
+				<br>
+				<div id="pastDateLanding">
+				</div>
+				<br>
+				<div id="workoutInfoLanding">
+				</div>
+			</div>
+			<button type="submit" class="btn btn-primary">Submit</button>
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript" src="{{url_for('static', filename='js/scripts.js')}}"></script>
+<script type="text/javascript" >
+	window.onload = function loadPageOptions() {
+		getOptions('{{url_for('main.get_workouts_json')}}', 'workout', true, true,'id');
+	};
+
+	var feedbackJson = {};
+
+	async function createFeedbackForm(self) {
+		const land = "workoutInfoLanding"
+		const workoutData = await loadExistingWorkout(self, land)
+		const workoutDataLength = Object.keys(workoutData).length
+		let exercises = new Set()
+		for (let i=1; i<workoutDataLength+1; i++) {
+			workoutData[i].forEach(item => exercises.add(item))
+		}
+		let exercisesList = Array.from(exercises)
+		const feedbackDiv = document.createElement('div')
+		const feedbackTable = document.createElement('table')
+		feedbackTable.classList.add('table')
+		let feedbackTableHeaderRow = document.createElement('tr')
+		const headerList = ['Exercise', 'Reps' ,'Weight', 'Feel']
+		for (let i=0; i<4; i++) {
+			let headerItem = document.createElement('th')
+			headerItem.innerHTML = headerList[i]
+			feedbackTableHeaderRow.appendChild(headerItem)
+		}
+
+		feedbackTable.appendChild(feedbackTableHeaderRow)
+		for (let i=0; i<exercises.size; i++) {
+			let feedbackTableRow = document.createElement('tr')
+			let exerciseTd = document.createElement('td')
+			exercise = exercisesList[i]
+			exerciseTd.innerHTML = exercise
+			feedbackTableRow.appendChild(exerciseTd)
+			repsTd = createFormInput('reps', exercise, exercisesList)
+			feedbackTableRow.appendChild(repsTd)
+			let weightTd = createFormInput('weight', exercise, exercisesList)
+			feedbackTableRow.appendChild(weightTd)
+			let feelTd = createFormRange('feel', exercise, exercisesList)
+			feedbackTableRow.appendChild(feelTd)
+
+			feedbackTable.appendChild(feedbackTableRow)
+
+		}
+		feedbackDiv.appendChild(feedbackTable)
+		landObj = document.getElementById(land)
+		landObj.appendChild(feedbackDiv)
+	};
+
+	function loadExistingWorkout(self, land) {
+		const workout = document.getElementById("workout")
+		if (workout) {
+			var workoutId = workout.options[workout.selectedIndex].getAttribute('objId');
+			var workoutData = loadItem('{{url_for('main.workout_json', workout_id='var')}}'.replace('var',workoutId))
+			displayWorkout(workoutData, land)
+		} else {
+			var warningText = document.createElement('p')
+			warningText.innerHTML = 'Please select a workout'
+		}
+		return workoutData
+	};
+
+	function createFormRange(name, exercise, exercisesList) {
+		let td = document.createElement('td')
+		let div = document.createElement('div')
+
+		let labelDiv = document.createElement('div')
+		labelDiv.classList.add('row')
+
+		let input = document.createElement('input')
+		inputId = name + 'Input'
+		input.setAttribute('id', inputId)
+		input.setAttribute('name', name)
+		input.setAttribute('type', 'range')
+		input.setAttribute('min', 0)
+		input.setAttribute('max', 2)
+		input.setAttribute('exercise', exercise.replace(' ', '_'))
+		input.setAttribute('onchange', 'compileFeedbackJson(this)')
+		input.classList.add('form-range')
+		labelDiv.appendChild(input)
+
+		let badLabelCol = document.createElement('div')
+		badLabelCol.classList.add('col-4')
+		let badlabel = document.createElement('label')
+		badlabel.classList.add('form-label')
+		badlabel.classList.add('pull-left')
+		badlabel.setAttribute('for', inputId)
+		badlabel.innerHTML = "Bad"
+		badLabelCol.appendChild(badlabel)
+		labelDiv.appendChild(badLabelCol)
+
+		let okLabelCol = document.createElement('div')
+		okLabelCol.classList.add('col-4')
+		let okLabel = document.createElement('label')
+		okLabel.classList.add('form-label')
+		okLabel.setAttribute('for', inputId)
+		okLabel.innerHTML = "Ok"
+		okLabelCol.appendChild(okLabel)
+		labelDiv.appendChild(okLabelCol)
+
+		let goodLabelCol = document.createElement('div')
+		goodLabelCol.classList.add('col-4')
+		let goodLabel = document.createElement('label')
+		goodLabel.classList.add('form-label')
+		goodLabel.classList.add('pull-right')
+		goodLabel.setAttribute('for', inputId)
+		goodLabel.innerHTML = "Good"
+		goodLabelCol.appendChild(goodLabel)
+		labelDiv.appendChild(goodLabelCol)
+		
+		div.appendChild(labelDiv)
+		td.appendChild(div)
+		return td
+	};
+
+	function createFormInput(name, exercise, exercisesList) {
+		let td = document.createElement('td')
+		let div = document.createElement('div')
+		let input = document.createElement('input')
+		inputId = name + 'Input'
+		input.setAttribute('id', inputId)
+		input.setAttribute('name', name)
+		input.setAttribute('type', 'text')
+		input.setAttribute('exercise', exercise.replace(' ', '_'))
+		input.setAttribute('onchange', 'compileFeedbackJson(this)')
+		input.setAttribute('required', true)
+		input.classList.add('form-control')
+		div.appendChild(input)
+		td.appendChild(div)
+		return td
+	};
+
+	function compileFeedbackJson(self) {
+		let exercise = self.getAttribute('exercise')
+		let inputType = self.getAttribute('name')
+		let value = self.value
+		if (exercise in feedbackJson){
+			feedbackJson[exercise][inputType] = value
+		} else {
+			exerciseArray = {}
+			exerciseArray[inputType] = value
+			exerciseArray['feel'] = '2'
+			feedbackJson[exercise] = exerciseArray
+		}
+
+	};
+
+function addFeedbackJsonInput(self){
+	let input = document.createElement('input')
+	input.setAttribute('name', 'workout_data')
+	input.setAttribute('hidden', true)
+	input.value = JSON.stringify(feedbackJson)
+	land = document.getElementById('workoutInfoLanding')
+	land.appendChild(input)
+};
+createDateFilter({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv', false);
+
+function togglePastDateInput(){
+	let formDivObj = document.getElementById('dateInputDiv')
+	if (formDivObj){
+		formDivObj.remove()
+	} else {
+		let formDiv = document.createElement('div');
+		formDiv.classList.add('mb-3');
+		formDiv.setAttribute('id', 'dateInputDiv');
+
+		let dateInputLabel = document.createElement('label');
+		dateInputLabel.classList.add('form-label');
+		let dateInputId = 'pastDateInput';
+		dateInputLabel.setAttribute('for', dateInputId);
+		dateInputLabel.innerHTML = 'Date of workout'
+
+		let dateInput = document.createElement('input');
+		dateInput.classList.add('form-control');
+		dateInput.setAttribute('type', 'datetime-local');
+		dateInput.setAttribute('id', dateInputId);
+		dateInput.setAttribute('name', 'past_date');
+		let currentDate = new Date();
+		let timezoneOffset = currentDate.getTimezoneOffset() * 60000; // convert offset to milliseconds
+		let localISOTime = (new Date(currentDate - timezoneOffset)).toISOString().slice(0, -1);
+		dateInput.setAttribute('max', localISOTime);
+
+		formDiv.appendChild(dateInputLabel);
+		formDiv.appendChild(dateInput);
+
+		land = document.getElementById('pastDateLanding');
+		land.appendChild(formDiv);
+	}
+
+};
+</script>
+{% endblock %}

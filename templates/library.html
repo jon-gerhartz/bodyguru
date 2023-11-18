@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container-fluid">
+	<div class='row top-div'>
+		<div class='col'>
+			<h1>Exercises</h1>
+			<p>Add, update or remove exercises</p>
+		</div>
+	</div>
+	<br>
+	<div class='row'>
+		<div class='col-sm-2 side-div', id='filterDiv'>
+			<h3>Filter</h3>
+		</div>
+		<div class='col-sm-8'>
+			{% for i, v in exercises.iterrows() %}
+				<div id="{{v['name']}}" class='row' style='padding-bottom: 15px;'>
+					<div class="card" style="border:none;background-color: #f5f5f5;">
+						<div class="card-body">
+							<h5 name="{{v['name']}}" parentId="{{v['name']}}" class="card-title" searchtag='resultData'>{{v['name']}}</h5>
+							<p class="card-text">{{v['description']}}</p>
+							<span class="badge text-bg-dark" tag='type' parentId="{{v['name']}}">{{v['type']}}</span>
+							<span class="badge text-bg-dark" tag='equipment' parentId="{{v['name']}}">{{v['equipment']}}</span>
+							<span class="badge text-bg-dark" tag='muscle_group_name' parentId="{{v['name']}}">{{v['muscle_group_name']}}</span>
+							<br>
+							<br>
+							<a href="{{url_for('main.details', exercise_id=v['id'])}}" class="card-link">See Details</a>
+						</div>
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+		<div class='col-sm-2'>
+			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createExercise">
+			Add Exercise
+			</button>
+		</div>
+	</div>
+</div>
+<div class="modal fade" id="createExercise" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">Create a New Exercise</h1>
+      </div>
+      <div class="modal-body">
+		<form action="{{url_for('main.library')}}" method="post" enctype="multipart/form-data" >
+			<div class="mb-3">
+				<label for="name" class="form-label">Exercise Name</label>
+				<input type="text" class="form-control" id="name" name="name" aria-describedby="emailHelp" placeholder="Input name here...">
+			</div>
+			<div class="mb-3">
+				<label for="exerciseType" class="form-label">Exercise Type</label>
+				<select class="form-select" aria-label="Default select example" id="exerciseType" name="etype">
+				</select>
+			</div>
+			<div class="mb-3">
+				<label for="exerciseType" class="form-label">Exercise Equipment</label>
+				<select class="form-select" aria-label="Default select example" id="exerciseEquipment" name="equipment">
+				</select>
+			</div>
+			<div class="mb-3">
+				<label for="exerciseType" class="form-label">Muscle Group</label>
+				<select class="form-select" aria-label="Default select example" id="muscleGroup" name="muscle_group">
+				</select>
+			</div>
+			<div class="mb-3">
+				<label for="description" class="form-label">Description</label>
+				<input type="text" class="form-control" id="description" name="description" placeholder="Describe the exercise...">
+			</div>
+			<button type="submit" class="btn btn-primary">Submit</button>
+		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript" src="{{url_for('static', filename='js/scripts.js')}}"></script>
+<script type="text/javascript" >
+	window.onload = function loadPageOptions() {
+		getOptions("{{url_for('main.muscle_groups')}}", "muscleGroup", false, false, "id");
+		getOptions("{{url_for('main.exercise_types')}}", "exerciseType", false, false, "id");
+		getOptions("{{url_for('main.exercise_equipment')}}", "exerciseEquipment", false, false, "id");
+	};
+	createFilters({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv');
+</script>
+{% endblock %}

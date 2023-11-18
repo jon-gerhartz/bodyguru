@@ -1,7 +1,83 @@
 {% extends 'base.html' %}
-{% block body %}
-    {% for bet in bets%}
-		<a href="{{url_for('main.line_page', line=bet)}}">{{bet}}</a>
-		<br>
-	{%endfor%}
+{% block main %}
+<div class="row hero">
+	<div class="col-12 text-center">
+		<img class="img-fluid" src="{{url_for('static', filename='img/logo_black_small.png')}}" alt="Signup image, group of fit people exercising surrounded by graphics representing analytics and data">
+		<h1 class="mb-3 fw-semibold lh-1"><span>Master</span> Your Body</h1>
+		<h3 class="mb-3 fw-medium lh-1" style="padding-bottom: 10px;">Discover deeper fitness potential with fully custom workout<br>tracking and analytics</h3>
+		<a href="#signupForm"><button  class="btn btn-primary">Get Started</button></a>
+	</div>
+</div>
+<div class="row align-items-center hero-middle">
+	<div class="col-sm-6 text-center">
+		<h1>Simply log important details of every workout</h1>
+		<h5 class="fw-medium">Every log creates a datapoint for optimizing and informing future workouts</h5>
+	</div>
+	<div class="col-sm-6">
+		<div class="row align-center">
+			<video class="" id="vid" loop autoplay muted >
+				<source src="{{url_for('static', filename='video/log_demo.mp4')}}" type="video/mp4">
+			</video>
+		</div>
+	</div>
+</div>
+<div class='row hero-base'>
+	<div class='col-sm-7'>
+		<img class="img-fluid" src="{{url_for('static', filename='img/signup.png')}}" alt="Signup image, group of fit people exercising surrounded by graphics representing analytics and data">
+	</div>
+	<div class='col-sm-5'>
+		<div class='row'>
+			<h3 class="fw-semibold" id="loginHeadline">Start your journey here</h3>
+			<p id="loginSubHeader">Create an account to begin tuning your mind to the rhythm of the body</p>
+		</div>
+		<div id="signupForm" class='row'>
+			<form id="loginForm" action="{{url_for('auth.signup')}}" method="post" enctype="multipart/form-data">
+				<div class="mb-3">
+					<label for="exampleInputEmail1" class="form-label">Email</label>
+					<input type="email" name="email" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
+				</div>
+				<div class="mb-3">
+					<label for="exampleInputPassword1" class="form-label">Password</label>
+					<input type="password" name="password" class="form-control" id="exampleInputPassword1">
+				</div>
+				<div class="mb-3" id="confirmPassDiv">
+					<label for="exampleInputPassword1" class="form-label">Confirm Password</label>
+					<input type="password" name="confirm" class="form-control" id="exampleInputPassword2">
+				</div>
+				<br>
+				<div class='d-flex justify-content-between'>
+					<a href="#signupForm" id="loginToggle" onclick="return toggleLoginSignup()">Login</a>
+					<button type="submit" class="btn btn-primary">Submit</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<div class="row">
+</div>
+{% endblock %}
+{% block script %}
+<script src="{{url_for('static',filename='js/scripts.js')}}"></script>
+<script>
+	function toggleLoginSignup(){
+		var toggle = document.getElementById("loginToggle")
+		let headline = document.getElementById("loginHeadline")
+		let subhead = document.getElementById("loginSubHeader")
+		let confirmPassDiv = document.getElementById("confirmPassDiv")
+		let form = document.getElementById("loginForm")
+		if(toggle.innerHTML=='Login'){
+			toggle.innerHTML = 'Signup'
+			headline.innerHTML = 'Welcome Back'
+			subhead.innerHTML = 'Nice seeing you again. Login to get back in the groove.'
+			confirmPassDiv.setAttribute('hidden',true)
+			form.setAttribute('action',"{{url_for('auth.login')}}")
+		} else {
+			toggle.innerHTML = 'Login'
+			headline.innerHTML = 'Start your journey here'
+			subhead.innerHTML = 'Create an account to begin tuning your mind to the rhythm of the body'
+			confirmPassDiv.removeAttribute('hidden')
+			form.setAttribute('action',"{{url_for('auth.signup')}}")
+		}
+	};
+</script>
 {% endblock %}

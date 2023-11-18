@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+	<div class='row top-div'>
+		<div class='col'>
+			<h1>Dashboard</h1>
+			<p>Welcome back {{user['email'][0]}}</p>
+		</div>
+	</div>
+	<br>
+	<div class="row text-center">
+		<div class="col">
+			<h5>Volume by Exercise Over Time</h5>
+			{% for file in files %}
+				<div>
+					<img class="img-fluid" src="{{url_for('static', filename='user_reports/'+file)}}">
+				</div>
+				<br>
+			{% endfor %}
+		</div>
+	</div>
+{% endblock %}
