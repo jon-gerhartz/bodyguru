@@ -1,0 +1,6 @@
+Flask==2.3.2
+matplotlib==3.8.1
+pandas==2.0.3
+pg8000==1.29.8
+python-dotenv==1.0.0
+python_bcrypt==0.3.2
