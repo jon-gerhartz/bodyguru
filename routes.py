@@ -3,7 +3,6 @@ import json
 from lib.crud import *
 from lib.data_meta import *
 from lib.reports import run_report_flow
-import pandas as pd
 from utils.app_functions import auth_required
 
 main = Blueprint('main', __name__)
@@ -51,8 +50,8 @@ def library():
 @auth_required
 def exercises():
     user_id = session['user_id']
-    exercises = get_exercises(user_id)
-    exercises_list = exercises.to_dict(orient='records')
+    exercises_df = get_exercises(user_id)
+    exercises_list = exercises_df.to_dict(orient='records')
     exercises_dict = {'name': 'exercise', 'data': exercises_list}
     return exercises_dict
 
@@ -102,8 +101,8 @@ def exercise_equipment():
 @main.route('/workouttypes', methods=['GET'])
 @auth_required
 def workout_types():
-    workout_types = get_workout_types()
-    workout_types_list = workout_types.to_dict(orient='records')
+    workout_types_df = get_workout_types()
+    workout_types_list = workout_types_df.to_dict(orient='records')
     workout_types_dict = {'name': 'workout type', 'data': workout_types_list}
     return workout_types_dict
 
@@ -113,9 +112,9 @@ def workout_types():
 def workouts():
     user_id = session['user_id']
     if request.method == 'GET':
-        workouts = get_workouts(user_id=user_id)
-        col_data = create_filer_col_dict(workout_filter_cols, workouts)
-        return render_template('workouts.html', workouts=workouts, data_cols=workout_filter_cols, col_data=col_data)
+        workouts_df = get_workouts(user_id=user_id)
+        col_data = create_filer_col_dict(workout_filter_cols, workouts_df)
+        return render_template('workouts.html', workouts=workouts_df, data_cols=workout_filter_cols, col_data=col_data)
     else:
         name = request.form.get('name')
         w_type = request.form.get('type')
@@ -168,9 +167,9 @@ def delete_workout(workout_id):
 def logs():
     user_id = session['user_id']
     if request.method == 'GET':
-        logs = get_workout_logs(user_id)
-        col_data = create_filer_col_dict(log_filter_cols, logs)
-        return render_template('log.html', logs=logs, data_cols=log_filter_cols, col_data=col_data)
+        logs_df = get_workout_logs(user_id)
+        col_data = create_filer_col_dict(log_filter_cols, logs_df)
+        return render_template('log.html', logs=logs_df, data_cols=log_filter_cols, col_data=col_data)
     else:
         workout_id = request.form.get('workout_id')
         feedback_data = request.form.get('workout_data')
