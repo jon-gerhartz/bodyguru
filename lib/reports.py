@@ -13,6 +13,7 @@ matplotlib.use('Agg')
 BASE_URL = os.getenv('BASE_URL')
 target_directory = ''.join((BASE_URL, '/static/user_reports'))
 print(BASE_URL, target_directory)
+print(__file__)
 
 
 def transform_log_data(logs):
