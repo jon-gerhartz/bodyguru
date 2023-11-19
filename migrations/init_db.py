@@ -2,28 +2,28 @@
 init_exercise_types = """
 CREATE TABLE IF NOT EXISTS exercise_types (
 	id TEXT PRIMARY KEY,
-    name TEXT
+    name TEXT UNIQUE
 );
 """
 
 init_muscle_group_name = """
 CREATE TABLE IF NOT EXISTS muscle_group_names (
 	id TEXT PRIMARY KEY,
-    name TEXT
+    name TEXT UNIQUE
 );
 """
 
 init_exercise_equipment = """
 CREATE TABLE IF NOT EXISTS exercise_equipment (
 	id TEXT PRIMARY KEY,
-    name TEXT
+    name TEXT UNIQUE
 );
 """
 
 init_workout_type = """
 CREATE TABLE IF NOT EXISTS workout_types (
 	id TEXT PRIMARY KEY,
-    name TEXT
+    name TEXT UNIQUE
 );
 """
 
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS user_reports (
 
 # DDL for reference table data insertion
 insert_exercise_types = """
-INSERT INTO exercise_types (id, name)
+INSERT OR IGNORE INTO exercise_types (id, name)
 VALUES
 	(1, 'lift'),
     (2, 'functional'),
@@ -118,7 +118,7 @@ VALUES
 """
 
 insert_exercise_equipment = """
-INSERT INTO exercise_equipment (id, name)
+INSERT OR IGNORE INTO exercise_equipment (id, name)
 VALUES
 	(1, 'dumbbell'),
     (2, 'barbell'),
@@ -129,7 +129,7 @@ VALUES
 """
 
 insert_muscle_group_names = """
-INSERT INTO muscle_group_names (id, name)
+INSERT OR IGNORE INTO muscle_group_names (id, name)
 VALUES
 	(1, 'quadriceps'),
     (2, 'hamstrings'),
@@ -144,7 +144,7 @@ VALUES
 """
 
 insert_workout_types = """
-INSERT INTO workout_types (id, name)
+INSERT OR IGNORE INTO workout_types (id, name)
 VALUES
 	(1, 'lifting'),
     (2, 'cardio'),
@@ -153,11 +153,8 @@ VALUES
 """
 # full run list
 run_list = [init_exercise_types, init_muscle_group_name, init_exercise_equipment, init_workout_type, init_exercises, init_workouts, init_workout_logs,
-            init_users, init_user_workouts, init_user_exercises, init_user_reports]
-
-
-insert_run_list = [insert_exercise_types, insert_exercise_equipment,
-                   insert_muscle_group_names, insert_workout_types]
+            init_users, init_user_workouts, init_user_exercises, init_user_reports, insert_exercise_types, insert_exercise_equipment,
+            insert_muscle_group_names, insert_workout_types]
 
 
 def run_migrations(conn):
