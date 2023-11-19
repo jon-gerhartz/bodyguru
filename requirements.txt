@@ -4,3 +4,4 @@ pandas==2.0.3
 pg8000==1.29.8
 python-dotenv==1.0.0
 bcrypt==4.0.1
+gunicorn
