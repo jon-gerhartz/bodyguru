@@ -23,6 +23,7 @@ def create_connection(db_file):
 
 
 DB = os.getenv('DB')
+print(DB)
 
 # conn = create_connection(DB)
 
