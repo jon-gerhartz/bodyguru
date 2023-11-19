@@ -11,8 +11,8 @@ import pathlib
 matplotlib.use('Agg')
 
 BASE_URL = os.getenv('BASE_URL')
-
-print(pathlib.Path().absolute())
+target_directory = ''.join((BASE_URL, '/static/user_reports'))
+print(BASE_URL, target_directory)
 
 
 def transform_log_data(logs):
