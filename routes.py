@@ -11,6 +11,9 @@ main = Blueprint('main', __name__)
 
 @main.route('/', methods=['GET', 'POST'])
 def index():
+    if 'authenticated' not in session.keys():
+        session['authenticated'] = False
+
     if session['authenticated'] == True:
         return redirect(url_for('main.dashboard', user_id=session['user_id']))
     return render_template('index.html')
