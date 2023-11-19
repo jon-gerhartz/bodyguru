@@ -194,4 +194,5 @@ def log_details(log_id):
 @main.route('/delete_log/<log_id>', methods=['POST'])
 @auth_required
 def delete_log(log_id):
+    delete_workout_log_item(log_id)
     return redirect(url_for('main.logs'))
