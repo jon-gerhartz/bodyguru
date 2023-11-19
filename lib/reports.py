@@ -9,8 +9,8 @@ import json
 import matplotlib
 matplotlib.use('Agg')
 
-current_directory = os.path.dirname(__file__)
-target_directory = os.path.join(current_directory, '..', 'static/user_reports')
+BASE_URL = os.getenv('BASE_URL')
+target_directory = os.path.join(BASE_URL, 'static/user_reports')
 
 
 def transform_log_data(logs):
