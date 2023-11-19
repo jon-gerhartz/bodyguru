@@ -12,6 +12,17 @@ matplotlib.use('Agg')
 BASE_URL = os.getenv('BASE_URL')
 target_directory = os.path.join(BASE_URL, 'static/user_reports')
 
+current_directory = os.path.dirname(__file__)
+
+# Navigate up two levels
+up_two_levels = os.path.join(current_directory, '..', '..')
+
+# Target folder (replace 'target_folder' with your folder name)
+target_folder = os.path.join(up_two_levels, 'target_folder')
+
+print(current_directory, up_two_levels, target_folder)
+print(os.getcwd())
+
 
 def transform_log_data(logs):
     log_exercise_data = pd.DataFrame(
