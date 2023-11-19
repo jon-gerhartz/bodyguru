@@ -19,7 +19,7 @@ def login():
         session['user_id'] = user_id
         return redirect(url_for('main.dashboard', user_id=user_id))
     else:
-        return redirect(request.referrer)
+        return redirect(url_for('main.index'))
 
 
 @auth.route('/signup', methods=['GET', 'POST'])
