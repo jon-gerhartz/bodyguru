@@ -1,3 +1,11 @@
+db_exists = """
+SELECT 1 FROM pg_database WHERE datname = 'workout';
+"""
+
+create_db = """
+CREATE DATABASE workout;
+"""
+
 # DDL for reference tables
 init_exercise_types = """
 CREATE TABLE IF NOT EXISTS exercise_types (
@@ -55,6 +63,15 @@ CREATE TABLE IF NOT EXISTS workouts (
 );
 """
 
+init_users = """
+CREATE TABLE IF NOT EXISTS users (
+	id TEXT PRIMARY KEY, -- UUIDs as text
+	email TEXT UNIQUE,
+	password_hash bytea, -- bytea equivalent in SQLite is BLOB
+	created_at TEXT -- SQLite does not support 'with time zone'
+);
+"""
+
 init_workout_logs = """
 CREATE TABLE IF NOT EXISTS workout_logs (
 	id TEXT PRIMARY KEY, -- UUIDs as text
@@ -70,14 +87,6 @@ CREATE TABLE IF NOT EXISTS workout_logs (
 """
 
 # DDL for user tables
-init_users = """
-CREATE TABLE IF NOT EXISTS users (
-	id TEXT PRIMARY KEY, -- UUIDs as text
-	email TEXT UNIQUE,
-	password_hash BLOB, -- bytea equivalent in SQLite is BLOB
-	created_at TEXT -- SQLite does not support 'with time zone'
-);
-"""
 
 init_user_workouts = """
 CREATE TABLE IF NOT EXISTS user_workouts (
@@ -109,27 +118,31 @@ CREATE TABLE IF NOT EXISTS user_reports (
 
 # DDL for reference table data insertion
 insert_exercise_types = """
-INSERT OR IGNORE INTO exercise_types (id, name)
+INSERT INTO exercise_types (id, name)
 VALUES
 	(1, 'lift'),
     (2, 'functional'),
     (3, 'cardio'),
-    (4, 'bodyweight');
+    (4, 'bodyweight')
+ON CONFLICT (name)
+DO NOTHING;
 """
 
 insert_exercise_equipment = """
-INSERT OR IGNORE INTO exercise_equipment (id, name)
+INSERT INTO exercise_equipment (id, name)
 VALUES
 	(1, 'dumbbell'),
     (2, 'barbell'),
     (3, 'kettlebell'),
     (4, 'bodyweight'),
     (5, 'jump rope'),
-    (6, 'cable');
+    (6, 'cable')
+ON CONFLICT (name)
+DO NOTHING;
 """
 
 insert_muscle_group_names = """
-INSERT OR IGNORE INTO muscle_group_names (id, name)
+INSERT INTO muscle_group_names (id, name)
 VALUES
 	(1, 'quadriceps'),
     (2, 'hamstrings'),
@@ -140,30 +153,18 @@ VALUES
     (7, 'shoulders'),
     (8, 'abs'),
     (9, 'neck'),
-    (10, 'back');
+    (10, 'back')
+ON CONFLICT (name)
+DO NOTHING;
 """
 
 insert_workout_types = """
-INSERT OR IGNORE INTO workout_types (id, name)
+INSERT INTO workout_types (id, name)
 VALUES
 	(1, 'lifting'),
     (2, 'cardio'),
     (3, 'hiit'),
-    (4, 'functional');
+    (4, 'functional')
+ON CONFLICT (name)
+DO NOTHING;
 """
-# full run list
-run_list = [init_exercise_types, init_muscle_group_name, init_exercise_equipment, init_workout_type, init_exercises, init_workouts, init_workout_logs,
-            init_users, init_user_workouts, init_user_exercises, init_user_reports, insert_exercise_types, insert_exercise_equipment,
-            insert_muscle_group_names, insert_workout_types]
-
-
-def run_migrations(conn):
-    try:
-        cursor = conn.cursor()
-        for i in run_list:
-            cursor.execute(i)
-        conn.commit()
-        message = 'successfully commited migrations'
-    except Exception as e:
-        message = e
-    return message

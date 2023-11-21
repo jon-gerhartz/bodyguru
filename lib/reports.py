@@ -1,5 +1,5 @@
 from lib.queries import q_create_user_report, q_get_user_reports, q_update_user_reports
-from extensions import DB, create_connection
+from extensions import conn
 import pandas as pd
 import os
 import matplotlib.dates as mdates
@@ -58,7 +58,7 @@ def generate_progress_report(log_exercise_data):
 
 def plot_exercise(exercise_name, records, user_id):
     dates = [datetime.strptime(
-        d['workout_date'], '%Y-%m-%d %H:%M:%S.%f') for d in records]
+        d['workout_date'], '%Y-%m-%dT%H:%M:%S.%f') for d in records]
     reps = [int(d['reps']) for d in records]
     weights = [int(d['weight']) for d in records]
     volume = [int(d['volume']) for d in records]
@@ -100,7 +100,6 @@ def plot_exercise(exercise_name, records, user_id):
 
 
 def create_report_record(user_id, report_name, filename):
-    conn = create_connection(DB)
     cur = conn.cursor()
     created_at = datetime.now()
     cur.execute(q_create_user_report, (user_id, created_at,
@@ -109,7 +108,6 @@ def create_report_record(user_id, report_name, filename):
 
 
 def update_report_record(user_id, report_name, filename):
-    conn = create_connection(DB)
     cur = conn.cursor()
     updated_at = datetime.now()
     q_update_user_reports_formatted = q_update_user_reports.format(
@@ -127,7 +125,6 @@ def create_progress_plot(progress_report, user_id):
 
 
 def get_reports(user_id):
-    conn = create_connection(DB)
     q_get_user_reports_formatted = q_get_user_reports.format(user_id=user_id)
     reports = pd.read_sql_query(q_get_user_reports_formatted, conn)
     return reports

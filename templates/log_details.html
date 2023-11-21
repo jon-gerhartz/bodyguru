@@ -4,7 +4,7 @@
 	<div class='row top-div'>
 		<div class='col'>
 			<h1>{{log['workout_name'][0]}}</h1>
-			<p>{{log['completed_at'][0]|fmt_dt_str("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
+			<p>{{log['completed_at'][0]|fmt_dt_str("%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
 				)}}</p>
 		</div>
 	</div>
@@ -39,7 +39,7 @@
 		</div>
 		<form action="{{url_for('main.delete_log', log_id=log['id'][0])}}" method="post" enctype="multipart/form-data" >
 			<div class="modal-body">
-				<p>Are you sure you want to delete {{log['workout_name'][0]}} {{log['completed_at'][0]|fmt_dt_str("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
+				<p>Are you sure you want to delete {{log['workout_name'][0]}} {{log['completed_at'][0]|fmt_dt_str("%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
 					)}}</p>
 			</div>
 			<div class="modal-footer">

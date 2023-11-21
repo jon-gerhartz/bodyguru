@@ -22,7 +22,7 @@
 
 				{% for i, v in logs.iterrows() %}
 					<tr id="{{i}}">
-						<td tag="created_at" parentId="{{i}}">{{v['completed_at']|fmt_dt_str("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
+						<td tag="created_at" parentId="{{i}}">{{v['completed_at']|fmt_dt_str("%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
 							)}}</td>
 						<td>{{v['workout_name']|capitalize()}}</td>
 						<td><a href="{{url_for('main.log_details', log_id=v['id'])}}">See More</a></td>

@@ -42,30 +42,32 @@
         <h1 class="modal-title fs-5" id="exampleModalLabel">Create a New Workout</h1>
       </div>
       <div class="modal-body">
-				<form action="{{url_for('main.workouts')}}" method="post" enctype="multipart/form-data">
+				<form class="needs-validation" id="workoutForm" action="{{url_for('main.workouts')}}" method="post" enctype="multipart/form-data">
 					<div class="mb-3">
 						<label for="name" class="form-label">Workout Name</label>
-						<input type="text" class="form-control" id="name" name="name">
+						<input type="text" class="form-control" id="name" name="name" required>
 					</div>
 					<div class="mb-3">
-						<select class="form-select" aria-label="Default select example" id="workoutType" name="type">
+						<select class="form-select" aria-label="Default select example" id="workoutType" name="type" required>
 						</select>
 					</div>
 					<div class="mb-3">
 						<label for="description" class="form-label">Description</label>
 						<textarea type="text" class="form-control" id="description" name="description"></textarea>
 					</div>
+					<div id="setValidationLanding">
+					</div>
 					<div id='workoutDataInputLanding'>
 						<p>Num Sets:</p>
 						<p id='numSets'>0</p>
 						<div class='row'>
 							<div class='col-3'>
-								<button type="button" class="btn btn-secondary" onclick="createTextAreaDiv('{{url_for('main.exercises')}}')">Add Set</button>
+								<button type="button" class="btn btn-secondary" onclick="createTextAreaDiv('{{url_for('main.exercises')}}');removeValidationText()">Add Set</button>
 							</div>
 							<div class='col-9'>
 								<button type="button" class="btn btn-warning" onclick="removeTextAreaDiv()">Remove Set</button>
 							</div>
-							<input type="hidden" class="form-control" id="workoutData" name="workout_data">
+							<input type="hidden" class="form-control" id="workoutData" name="workout_data" required>
 						</div>
 						<br>
 						<br>
@@ -254,9 +256,40 @@
 			}
 			json[setNum] = setExercises
 		}
-		document.getElementById('workoutData').value = JSON.stringify(json)
+		document.getElementById('workoutData').value = JSON.stringify(json);
+		
 	};
 	createFilters({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv');
 	getOptions("{{url_for('main.workout_types')}}", "workoutType", false, false, "id");
+</script>
+<script>
+	function validateWorkoutData(){
+		let workoutData = document.getElementById('workoutData').value 
+		let size = Object.keys(workoutData)
+		if (size == 0) {
+			return false;
+		} else {
+			return true;
+		}
+		
+	};
+
+	document.addEventListener('DOMContentLoaded', (event) => {
+		const form = document.getElementById('workoutForm');
+		const land = document.getElementById('setValidationLanding')
+		
+		form.addEventListener('submit', function(event) {
+			if (!validateWorkoutData()) {
+				event.preventDefault();
+				event.stopPropagation();
+				land.innerHTML = 'Please add a set then an exercise to the set to submit workout'
+			}
+		}, false);
+	});
+
+	function removeValidationText(){
+		const land = document.getElementById('setValidationLanding')
+		land.innerHTML = ''
+	}
 </script>
 {% endblock %}

@@ -47,21 +47,21 @@
 		<form action="{{url_for('main.library')}}" method="post" enctype="multipart/form-data" >
 			<div class="mb-3">
 				<label for="name" class="form-label">Exercise Name</label>
-				<input type="text" class="form-control" id="name" name="name" aria-describedby="emailHelp" placeholder="Input name here...">
+				<input type="text" class="form-control" id="name" name="name" aria-describedby="emailHelp" placeholder="Input name here..." required>
 			</div>
 			<div class="mb-3">
 				<label for="exerciseType" class="form-label">Exercise Type</label>
-				<select class="form-select" aria-label="Default select example" id="exerciseType" name="etype">
+				<select class="form-select" aria-label="Default select example" id="exerciseType" name="etype" required>
 				</select>
 			</div>
 			<div class="mb-3">
 				<label for="exerciseType" class="form-label">Exercise Equipment</label>
-				<select class="form-select" aria-label="Default select example" id="exerciseEquipment" name="equipment">
+				<select class="form-select" aria-label="Default select example" id="exerciseEquipment" name="equipment" required>
 				</select>
 			</div>
 			<div class="mb-3">
 				<label for="exerciseType" class="form-label">Muscle Group</label>
-				<select class="form-select" aria-label="Default select example" id="muscleGroup" name="muscle_group">
+				<select class="form-select" aria-label="Default select example" id="muscleGroup" name="muscle_group" required>
 				</select>
 			</div>
 			<div class="mb-3">

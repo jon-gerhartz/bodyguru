@@ -1,28 +1,16 @@
 from dotenv import load_dotenv
-from migrations.init_db import run_migrations
 import os
-import sqlite3
-from sqlite3 import Error
+import pg8000
 
+load_dotenv()
+DB_USER = os.getenv("DB_USER")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
 
-def create_connection(db_file):
-    """ create a database connection to the SQLite database
-        specified by the db_file
-    :param db_file: database file
-    :return: Connection object or None
-    """
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-        return conn
-    except Error as e:
-        print(e)
-
-    return conn
-
-
-DB = os.getenv('DB')
-
-# conn = create_connection(DB)
-# message = run_migrations(conn)
-# print(message)
+conn = pg8000.connect(
+    user=DB_USER,
+    host=DB_HOST,
+    port=DB_PORT,
+    database=DB_NAME
+)
