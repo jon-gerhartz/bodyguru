@@ -36,7 +36,7 @@ WHERE {lookup_col} = '{lookup_val}'
 
 q_create_exercise = """
 INSERT INTO exercises (id, name, exercise_type_id, exercise_equipment_id, description, muscle_group_id)
-VALUES (%s, %s, %s, %s, %s, %s) 
+VALUES (:id, :name, :exercise_type_id, :exercise_equipment_id, :description, :muscle_group_id)
 """
 
 q_delete_exercise = """
@@ -78,7 +78,7 @@ WHERE {lookup_col} = '{lookup_val}'
 
 q_create_workout = """
 INSERT INTO workouts (id, name, workout_type_id, description, workout_data)
-VALUES (%s, %s, %s, %s, %s) 
+VALUES (:id, :name, :workout_type_id, :description, :workout_data)
 """
 
 q_delete_workout = """
@@ -114,7 +114,7 @@ WHERE wl.id = '{id}'
 
 q_create_workout_log = """
 INSERT INTO workout_logs (id, workout_id, user_id, feedback_data, completed_at, created_at)
-VALUES (%s, %s, %s, %s, %s, %s)
+VALUES (:id, :workout_id, :user_id, :feedback_data, :completed_at, :created_at)
 """
 
 q_delete_workout_log = """
@@ -126,7 +126,7 @@ WHERE id = '{log_id}'
 # queries for user
 q_create_user = """
 INSERT INTO users(id, email, password_hash, created_at)
-VALUES (%s, %s, %s, %s) 
+VALUES (:id, :email, :password_hash, :created_at)
 """
 
 q_get_user = """
@@ -150,18 +150,19 @@ WHERE email = '{email}'
 # queries for user_workout
 q_create_user_workout = """
 INSERT INTO user_workouts
-VALUES (%s, %s) 
+VALUES (:user_id, :workout_id)
 """
+
 # queries for user_exercise
 q_create_user_exercise = """
 INSERT INTO user_exercises
-VALUES (%s, %s) 
+VALUES (:user_id, :exercise_id)
 """
 
 # queries for user_reports
 q_create_user_report = """
 INSERT INTO user_reports(user_id, created_at, updated_at, report_name, filename)
-VALUES (%s, %s, %s, %s, %s);
+VALUES (:user_id, :created_at, :updated_at, :report_name, :filename)
 """
 
 q_get_user_reports = """

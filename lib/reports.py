@@ -1,5 +1,5 @@
 from lib.queries import q_create_user_report, q_get_user_reports, q_update_user_reports
-from extensions import conn
+from extensions import execute_query, execute_pd
 import pandas as pd
 import os
 import matplotlib.dates as mdates
@@ -100,20 +100,16 @@ def plot_exercise(exercise_name, records, user_id):
 
 
 def create_report_record(user_id, report_name, filename):
-    cur = conn.cursor()
     created_at = datetime.now()
-    cur.execute(q_create_user_report, (user_id, created_at,
-                created_at, report_name, filename))
-    conn.commit()
+    execute_query(q_create_user_report, user_id=user_id, created_at=created_at,
+                  updated_at=created_at, report_name=report_name, filename=filename)
 
 
 def update_report_record(user_id, report_name, filename):
-    cur = conn.cursor()
     updated_at = datetime.now()
     q_update_user_reports_formatted = q_update_user_reports.format(
         report_name=report_name, filename=filename, updated_at=updated_at, user_id=user_id)
-    cur.execute(q_update_user_reports_formatted)
-    conn.commit()
+    execute_query(q_update_user_reports_formatted)
 
 
 def create_progress_plot(progress_report, user_id):
@@ -126,7 +122,7 @@ def create_progress_plot(progress_report, user_id):
 
 def get_reports(user_id):
     q_get_user_reports_formatted = q_get_user_reports.format(user_id=user_id)
-    reports = pd.read_sql_query(q_get_user_reports_formatted, conn)
+    reports = execute_pd(q_get_user_reports_formatted)
     return reports
 
 
