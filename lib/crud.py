@@ -96,8 +96,7 @@ def create_workout_log(workout_id, user_id, feedback_data, past_date=''):
     else:
 
         dt_obj = datetime.strptime(past_date, "%Y-%m-%dT%H:%M")
-        fmtd_dt = dt_obj.strftime("%Y-%m-%d %H:%M:00.000000")
-        completed_at = fmtd_dt
+        completed_at = dt_obj
     execute_query(q_create_workout_log, id=log_id, workout_id=workout_id,
                   user_id=user_id, feedback_data=feedback_data, created_at=created_at, completed_at=completed_at)
     return 'done'

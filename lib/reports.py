@@ -107,9 +107,8 @@ def create_report_record(user_id, report_name, filename):
 
 def update_report_record(user_id, report_name, filename):
     updated_at = datetime.now()
-    q_update_user_reports_formatted = q_update_user_reports.format(
-        report_name=report_name, filename=filename, updated_at=updated_at, user_id=user_id)
-    execute_query(q_update_user_reports_formatted)
+    execute_query(q_update_user_reports, report_name=report_name,
+                  filename=filename, updated_at=updated_at, user_id=user_id)
 
 
 def create_progress_plot(progress_report, user_id):
@@ -130,8 +129,12 @@ def run_report_flow(logs, user_id):
     reports = get_reports(user_id)
     user_has_reports = len(reports.index) > 0
     if user_has_reports:
-        last_report_updated = pd.to_datetime(reports['updated_at']).max()
-        last_log_created = pd.to_datetime(logs['created_at']).max()
+        updated_dt = pd.to_datetime(
+            reports['updated_at'], format='%Y-%m-%dT%H:%M:%S.%f')
+        logs_dt = pd.to_datetime(
+            logs['created_at'], format='%Y-%m-%dT%H:%M:%S.%f')
+        last_report_updated = updated_dt.max()
+        last_log_created = logs_dt.max()
     else:
         last_report_updated = 0
         last_log_created = 1
