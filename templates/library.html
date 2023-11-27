@@ -9,10 +9,10 @@
 	</div>
 	<br>
 	<div class='row'>
-		<div class='col-sm-2 side-div', id='filterDiv'>
+		<div class='col-sm-2 side-div order-md-0 order-1', id='filterDiv'>
 			<h3>Filter</h3>
 		</div>
-		<div class='col-sm-8'>
+		<div class='col-sm-8 order-md-2 order-1'>
 			{% for i, v in exercises.iterrows() %}
 				<div id="{{v['name']}}" class='row' style='padding-bottom: 15px;'>
 					<div class="card" style="border:none;background-color: #f5f5f5;">
@@ -30,10 +30,12 @@
 				</div>
 			{% endfor %}
 		</div>
-		<div class='col-sm-2'>
+		<div class='col-sm-2 order-md-2 order-0'>
 			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createExercise">
 			Add Exercise
 			</button>
+			<br>
+			<br>
 		</div>
 	</div>
 </div>
