@@ -153,7 +153,15 @@ VALUES
     (7, 'shoulders'),
     (8, 'abs'),
     (9, 'neck'),
-    (10, 'back')
+    (10, 'back'),
+    (11, 'lats'),
+    (12, 'middle back'),
+    (13, 'lower back'),
+    (14, 'glutes'),
+    (15, 'neck'),
+    (16, 'traps'),
+    (17, 'abductors'),
+    (18, 'adductors')
 ON CONFLICT (name)
 DO NOTHING;
 """
