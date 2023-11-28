@@ -53,7 +53,7 @@ conn = create_conn(DB_NAME)
 
 run_list = [init_exercise_types, init_muscle_group_name, init_exercise_equipment, init_workout_type, init_exercises, init_workouts, init_users, init_workout_logs,
             init_user_workouts, init_user_exercises, init_user_reports, insert_exercise_types, insert_exercise_equipment,
-            insert_muscle_group_names, insert_workout_types]
+            insert_muscle_group_names, insert_workout_types, add_link_to_exercises]
 
 message = run_migrations(conn, run_list)
 print(message)

@@ -26,6 +26,7 @@ FROM (
 		,a.description
 		,d.name as muscle_group_name
         ,f.user_id is null as is_default_exercise
+        ,a.link
 	FROM exercises a
 	JOIN exercise_types b on b.id = a.exercise_type_id
 	JOIN exercise_equipment c on c.id = a.exercise_type_id

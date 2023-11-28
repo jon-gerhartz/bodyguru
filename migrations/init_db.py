@@ -86,6 +86,11 @@ CREATE TABLE IF NOT EXISTS workout_logs (
 );
 """
 
+# alter statements for core tables
+add_link_to_exercises = """
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS link TEXT;
+"""
+
 # DDL for user tables
 
 init_user_workouts = """
@@ -136,7 +141,14 @@ VALUES
     (3, 'kettlebell'),
     (4, 'bodyweight'),
     (5, 'jump rope'),
-    (6, 'cable')
+    (6, 'cable'),
+    (7, 'other'),
+    (8, 'machine'),
+    (9, 'e-z curl bar'),
+    (10, 'bands'),
+    (11, 'medicine ball'),
+    (12, 'exercise ball'),
+    (13, 'weight bench')
 ON CONFLICT (name)
 DO NOTHING;
 """
