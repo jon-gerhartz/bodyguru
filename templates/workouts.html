@@ -10,7 +10,11 @@
 	<br>
 	<div class='row'>
 		<div class='col-sm-2 side-div order-md-0 order-1', id='filterDiv'>
-			<h3>Filter Results</h3>
+			<button class="btn btn-dark" type="button" data-bs-toggle="collapse" data-bs-target="#filterInnerDiv" aria-expanded="true" aria-controls="#filterInnerDiv">
+				Filter Items
+			</button>
+			<br>
+			<br>
 		</div>
 		<div class='col-sm-8 order-md-1 order-2'>
 			{% for i, v in workouts.iterrows() %}
