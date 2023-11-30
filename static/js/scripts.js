@@ -81,6 +81,9 @@ async function displayWorkout(workoutDataPromise, landId, input=false){
 
 function createFilters(dataCols, colData, landId, search=true){
 	const land = document.getElementById(landId)
+	const filterDiv = document.createElement('div')
+	filterDiv.classList.add("collapse")
+	filterDiv.setAttribute('id', 'filterInnerDiv')
 	const dataColsLength = dataCols.length
 	if (search){
 		let search = document.createElement('input')
@@ -89,9 +92,9 @@ function createFilters(dataCols, colData, landId, search=true){
 		search.setAttribute('type','search')
 		search.setAttribute('placeholder','search by name')
 		search.setAttribute('onkeyup', "searchResults(this)")
-		land.appendChild(search)
+		filterDiv.appendChild(search)
 		let br = document.createElement('br')
-		land.appendChild(br)
+		filterDiv.appendChild(br)
 	}
 	
 	for (let i=0; i< dataColsLength; i++){
@@ -130,9 +133,10 @@ function createFilters(dataCols, colData, landId, search=true){
 		}
 		row.appendChild(col)
 		let br = document.createElement('br')
-		land.appendChild(row)
-		land.appendChild(br)
+		filterDiv.appendChild(row)
+		filterDiv.appendChild(br)
 	}
+	land.appendChild(filterDiv)
 };
 
 function createDateFilter(dataCols, colData, landId, search=true){

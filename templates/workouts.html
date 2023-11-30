@@ -63,10 +63,8 @@
 						<p>Num Sets:</p>
 						<p id='numSets'>0</p>
 						<div class='row'>
-							<div class='col-3'>
+							<div class='col'>
 								<button type="button" class="btn btn-secondary" onclick="createTextAreaDiv('{{url_for('main.exercises')}}');removeValidationText()">Add Set</button>
-							</div>
-							<div class='col-9'>
 								<button type="button" class="btn btn-warning" onclick="removeTextAreaDiv()">Remove Set</button>
 							</div>
 							<input type="hidden" class="form-control" id="workoutData" name="workout_data" required>
@@ -110,12 +108,14 @@
 		const inputid = 'input_set_' + count
 		input.setAttribute('id', inputid)
 		input.setAttribute('name', inputid)
-		input.setAttribute('placeholder', 'Add exercise to set...')
+		input.setAttribute('placeholder', 'Search to add exercise...')
 		input.setAttribute('count', count)
 		optionsid = 'option_dropdown_' + count
 		const inputOnclickAtrr = `toggleDropdown(${optionsid}.id)`
 		input.setAttribute('onclick', inputOnclickAtrr)
 		input.setAttribute('onkeyup', 'filterOptionsList(this)')
+		input.setAttribute('size', 25)
+		input.setAttribute('style', "overflow-y: hidden;")
 		formdiv.appendChild(input)
 
 		const resp = await fetch(url)

@@ -6,6 +6,10 @@ create_db = """
 CREATE DATABASE workout;
 """
 
+# add_uuid_extension = """
+# CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+# """
+
 # DDL for reference tables
 init_exercise_types = """
 CREATE TABLE IF NOT EXISTS exercise_types (
@@ -148,7 +152,7 @@ VALUES
     (10, 'bands'),
     (11, 'medicine ball'),
     (12, 'exercise ball'),
-    (13, 'weight bench')
+    (13, 'bench')
 ON CONFLICT (name)
 DO NOTHING;
 """
@@ -173,7 +177,8 @@ VALUES
     (15, 'neck'),
     (16, 'traps'),
     (17, 'abductors'),
-    (18, 'adductors')
+    (18, 'adductors'),
+    (19, 'forearms')
 ON CONFLICT (name)
 DO NOTHING;
 """

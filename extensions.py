@@ -5,6 +5,7 @@ import pg8000
 from sqlalchemy import create_engine, URL, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import DBAPIError
+import time
 
 load_dotenv()
 DB_USER = os.getenv("DB_USER")
@@ -26,26 +27,36 @@ engine = create_engine(url_obj)
 
 Session = sessionmaker(bind=engine)
 
+MAX_RETRIES = 3
+RETRY_BACKOFF = 2  # Seconds
+
 
 def execute_query(query, **kwargs):
-    session = Session()
-    try:
-        result = session.execute(text(query), kwargs)
-        session.commit()
-        return result
-    except DBAPIError as e:
-        session.rollback()
-        print(f"Database error: {e}")
-        # Handle error or re-raise
-    finally:
-        session.close()
+    for attempt in range(MAX_RETRIES):
+        session = Session()
+        try:
+            result = session.execute(text(query), kwargs)
+            session.commit()
+            return result
+        except DBAPIError as e:
+            session.rollback()
+            print(f"Attempt {attempt + 1} failed with error: {e}")
+            time.sleep(RETRY_BACKOFF ** attempt)
+            if attempt == MAX_RETRIES - 1:
+                raise e
+        finally:
+            session.close()
 
 
 def execute_pd(query, *args):
-    with Session() as session:
-        try:
-            result = pd.read_sql(query, session.bind, params=args)
-            return result
-        except DBAPIError as e:
-            print(f"Database error: {e}")
-            # Handle error or re-raise
+    for attempt in range(MAX_RETRIES):
+        with Session() as session:
+            try:
+                result = pd.read_sql(query, session.bind, params=args)
+                return result
+            except DBAPIError as e:
+                session.rollback()
+                print(f"Attempt {attempt + 1} failed with error: {e}")
+                time.sleep(RETRY_BACKOFF ** attempt)
+                if attempt == MAX_RETRIES - 1:
+                    raise e
