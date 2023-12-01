@@ -23,7 +23,7 @@ url_obj = URL.create(
     password=DB_PW
 )
 
-engine = create_engine(url_obj)
+engine = create_engine(url_obj, pool_pre_ping=True, pool_recycle=1800)
 
 Session = sessionmaker(bind=engine)
 
