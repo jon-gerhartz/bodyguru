@@ -111,7 +111,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS status_id TEXT DEFAULT 1;
 """
 
 add_status_foreign_key = """
-ALTER TABLE users ADD FOREIGN KEY (status_id) REFERENCES user_status(id) ON DELETE SET NULL;
+ALTER TABLE users ADD FOREIGN KEY (status_id) REFERENCES user_status(id);
 """
 
 # DDL for user tables
