@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from exp.landing import landing_data
 import json
 from lib.crud import *
 from lib.data_meta import *
@@ -14,7 +15,8 @@ def index():
         session['authenticated'] = False
 
     if session['authenticated'] == True:
-        return redirect(url_for('main.dashboard', user_id=session['user_id']))
+        user_id = session['user_id']
+        return redirect(url_for('main.dashboard', user_id=user_id))
     return render_template('index.html')
 
 
@@ -195,3 +197,11 @@ def log_details(log_id):
 def delete_log(log_id):
     delete_workout_log_item(log_id)
     return redirect(url_for('main.logs'))
+
+
+@main.route('/join/<var>', methods=['GET', 'POST'])
+def landing(var):
+    if request.method == 'GET':
+        return render_template('landing.html', data=landing_data)
+    else:
+        return redirect(url_for('main.dashboard'))

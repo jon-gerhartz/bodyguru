@@ -126,17 +126,27 @@ WHERE id = '{log_id}'
 
 # queries for user
 q_create_user = """
-INSERT INTO users(id, email, password_hash, created_at)
-VALUES (:id, :email, :password_hash, :created_at)
+INSERT INTO users(id, email, password_hash, created_at, name, status_id)
+VALUES (:id, :email, :password_hash, :created_at, :name, :status_id)
+"""
+
+q_update_user = """
+UPDATE users
+set
+    password_hash = :password_hash,
+    status_id = 2
+WHERE id = :id;
 """
 
 q_get_user = """
 SELECT
-	id
-	,email
-	,created_at
-FROM users
-WHERE {lookup_col} = '{lookup_val}'
+	a.id
+	,a.email
+	,a.created_at
+    ,b.name as status
+FROM users a
+JOIN user_status b on b.id = a.status_id
+WHERE a.{lookup_col} = '{lookup_val}'
 """
 
 q_get_user_auth = """
@@ -195,4 +205,16 @@ SELECT distinct id, name from exercise_equipment;
 
 q_get_workout_types_all = """
 SELECT distinct id, name from workout_types;
+"""
+
+# queries for password reset request
+
+q_create_pass_reset_request = """
+INSERT INTO password_reset_request(user_id, url_var, created_at)
+VALUES(:user_id, :url_var, :created_at)
+"""
+q_get_pass_reset_user = """
+SELECT *
+FROM password_reset_request
+WHERE url_var = '{url_var}'
 """

@@ -188,7 +188,6 @@ function filterResults(self){
 	val = self.getAttribute('val')
 	for (i = 0; i < sets.length; i++){
 		set = sets[i]
-		console.log(set)
 		if (set.innerHTML != val){
 			parentId = set.getAttribute('parentId')
 			ele = document.getElementById(parentId)

@@ -108,15 +108,21 @@ def delete_workout_log_item(log_id):
     execute_query(q_delete_workout_log_formatted)
     return 'workout log deleted'
 
+
 # crud functions for user
-
-
-def create_user(email, password_hash):
+def create_user(email, name, password_hash, status_id=1):
     user_id = str(uuid.uuid4())
     created_at = datetime.now()
     execute_query(q_create_user, id=user_id, email=email,
-                  password_hash=password_hash, created_at=created_at)
+                  password_hash=password_hash, created_at=created_at,
+                  name=name, status_id=status_id)
     return user_id
+
+
+def update_pass(user_id, password_hash):
+    execute_query(q_update_user,
+                  id=user_id, password_hash=password_hash)
+    return 'user updated'
 
 
 def get_user(lookup_val, by_email=False):
@@ -155,4 +161,19 @@ def get_exercise_equipment():
 
 def get_workout_types():
     df = execute_pd(q_get_workout_types_all)
+    return df
+
+# crud functions for password reset
+
+
+def create_pass_reset_request(user_id, url_var):
+    created_at = datetime.now()
+    execute_query(q_create_pass_reset_request,
+                  user_id=user_id, url_var=url_var, created_at=created_at)
+
+
+def get_pass_reset_user(url_var):
+    q_get_pass_reset_user_formatted = q_get_pass_reset_user.format(
+        url_var=url_var)
+    df = execute_pd(q_get_pass_reset_user_formatted)
     return df

@@ -1,6 +1,7 @@
-from lib.crud import get_user_auth, create_user
+from lib.crud import get_user_auth, create_user, update_pass, create_pass_reset_request, get_pass_reset_user
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from utils.app_functions import generate_password_hash, check_password
+from lib.sendgrid import send_reset_email
 
 auth = Blueprint('auth', __name__)
 
@@ -32,16 +33,52 @@ def login():
 def signup():
     email = request.form.get('email')
     password = request.form.get('password')
+    name = request.form.get('name')
     hashed_password = generate_password_hash(password)
     try:
-        user_id = create_user(email, hashed_password)
-    except:
+        if password:
+            user_id = create_user(email, name, hashed_password, status_id=2)
+        else:
+            user_id = create_user(email, name, hashed_password)
+    except Exception as e:
         flash(
             f'Account for {email} already exists. Try logging in. If you forgot your password, please email: jonathan@ideaship.io', 'error')
+        print(e)
         return redirect(url_for('main.index'))
     session['authenticated'] = True
     session['user_email'] = email
     session['user_id'] = user_id
+    return redirect(url_for('main.dashboard', user_id=user_id))
+
+
+@auth.route('/reset-password', methods=['GET', 'POST'])
+def send_pass_reset():
+    if request.method == 'GET':
+        return render_template('reset_pass_request.html')
+    else:
+        email = session['user_email']
+        url_var = send_reset_email(email)
+        user_id = session['user_id']
+        create_pass_reset_request(user_id, url_var)
+        return redirect(url_for('auth.send_pass_reset'))
+
+
+@auth.route('/reset-password/<var>', methods=['GET'])
+def reset_password(var):
+    if request.method == 'GET':
+        return render_template('reset_pass.html')
+
+
+@auth.route('/reset-password-submit', methods=['POST'])
+def submit_pass_reset():
+    password = request.form.get('password')
+    hashed_password = generate_password_hash(password)
+    referrer_list = request.referrer.split('/')
+    referrer_list_len = len(referrer_list)
+    var = referrer_list[referrer_list_len-1]
+    request_df = get_pass_reset_user(var)
+    user_id = request_df['user_id'][0]
+    update_pass(user_id, hashed_password)
     return redirect(url_for('main.dashboard', user_id=user_id))
 
 

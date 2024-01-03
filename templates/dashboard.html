@@ -2,8 +2,19 @@
 {% block content %}
 	<div class='row top-div'>
 		<div class='col'>
-			<h1>Dashboard</h1>
-			<p>Welcome back {{user['email'][0]}}</p>
+			{% if user['status'][0] == 'pending'%}
+				<div class="row">
+					<form id="resetForm" action="{{url_for('auth.send_pass_reset')}}" method="post" enctype="multipart/form-data">
+						<div class="alert alert-primary text-center" role="alert">
+							Registration incomplete. You need a password to login.  <a href="#" onclick="submitForm()">Click here</a> to finish signing up.
+						</div>
+					</form>
+				</div>
+			{% endif %}
+			<div class="row">
+				<h1>Dashboard</h1>
+				<p>Welcome back {{user['email'][0]}}</p>
+			</div>
 		</div>
 	</div>
 	<br>
@@ -18,4 +29,10 @@
 			{% endfor %}
 		</div>
 	</div>
+	<script>
+		function submitForm(){
+			form = document.getElementById('resetForm');
+			form.submit();
+		}
+	</script>
 {% endblock %}

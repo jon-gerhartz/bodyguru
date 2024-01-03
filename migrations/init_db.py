@@ -39,6 +39,13 @@ CREATE TABLE IF NOT EXISTS workout_types (
 );
 """
 
+init_user_status = """
+CREATE TABLE IF NOT EXISTS user_status (
+	id TEXT PRIMARY KEY,
+    name TEXT UNIQUE
+);
+"""
+
 # DDL for core tables
 init_exercises = """
 CREATE TABLE IF NOT EXISTS exercises (
@@ -93,6 +100,18 @@ CREATE TABLE IF NOT EXISTS workout_logs (
 # alter statements for core tables
 add_link_to_exercises = """
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS link TEXT;
+"""
+
+add_name_to_users = """
+ALTER TABLE users ADD COLUMN IF NOT EXISTS name TEXT;
+"""
+
+add_status_to_users = """
+ALTER TABLE users ADD COLUMN IF NOT EXISTS status_id TEXT DEFAULT 1;
+"""
+
+add_status_foreign_key = """
+ALTER TABLE users ADD FOREIGN KEY (status_id) REFERENCES user_status(id) ON DELETE SET NULL;
 """
 
 # DDL for user tables
@@ -192,4 +211,23 @@ VALUES
     (4, 'functional')
 ON CONFLICT (name)
 DO NOTHING;
+"""
+
+insert_user_status = """
+INSERT INTO user_status (id, name)
+VALUES
+	(1, 'pending'),
+    (2, 'active'),
+    (3, 'closed')
+ON CONFLICT (name)
+DO NOTHING;
+"""
+
+# DDL for password reset tbl
+init_password_reset_request = """
+CREATE TABLE IF NOT EXISTS password_reset_request (
+    user_id TEXT,
+    url_var TEXT,
+    created_at TEXT
+);
 """

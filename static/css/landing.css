@@ -1,0 +1,157 @@
+
+html {
+    font-size: 20px;
+}
+
+/* Media query for smaller screens (e.g., tablets, mobiles) */
+@media (max-width: 991px) {
+    html {
+        font-size: 18px;
+    }
+}
+
+body {
+    font-family: 'Noto Sans', sans-serif;
+}
+  
+
+.page-bg-img {
+    background-image: linear-gradient(to right, rgb(69, 126, 186), rgb(46, 165, 133));
+    background-size: cover;
+    background-position:center;
+    background-repeat: no-repeat;
+    height: 100%;
+    width: 100vw;
+}
+
+.full-page-bg-img {
+    background-image: linear-gradient(to right, rgb(69, 126, 186), rgb(46, 165, 133));
+    background-size: cover;
+    background-position:center;
+    background-repeat: no-repeat;
+    height: 100vh;
+    width: 100vw;
+}
+
+
+.col-top-pad {
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+@media (max-width: 991px) {
+    .col-top-pad {
+        margin-top: 5px
+    }
+}
+
+
+.row-x-pad {
+    margin-left: 100px;
+    margin-right: 10px;
+    max-height: 100vh;
+    margin-top: auto;
+    margin-bottom: auto;
+    max-width: 100vw;
+}
+
+
+/* Media query for smaller screens (e.g., tablets, mobiles) */
+@media (max-width: 991px) {
+    .row-x-pad {
+        margin-left: auto;
+        margin-right: auto;
+        padding-top: 20px;
+    }
+}
+
+
+.logo-row {
+    margin-left: 100px;
+    margin-right: 10px;
+    padding-top: 20px;
+}
+
+@media (max-width: 991px) {
+    .logo-row {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.landing-secondary {
+    background-color: rgb(55, 109, 166);
+    background-size: cover;
+    background-position:center;
+    background-repeat: no-repeat;
+    padding-top: 40px;
+    padding-bottom: 40px;
+    width: 100vw;
+  }
+
+  /* Custom CSS for the image */
+.img-custom {
+    width: auto; /* Ensures the image is responsive */
+    height: 85vh; /* Maintains aspect ratio */
+}
+
+/* Media query for smaller screens (e.g., tablets, mobiles) */
+@media (max-width: 991px) {
+    .img-custom {
+        height: 25vh; /* Adjust max height for smaller screens */
+    }
+}
+
+.benfits-img-col {
+    max-width: 100%;
+    height: auto;
+    padding-left: 150px;
+    padding-right: 150px;
+    padding-bottom: 20px;
+}
+
+@media (max-width: 991px) {
+    .benfits-img-col {
+        padding-left: 25px;
+        padding-right: 25px;
+    }
+}
+
+.test-card {
+    border-radius: 5px;
+    background-color: #f7f7f7;
+    height: 120px;
+    width: 100%;
+    padding: 10px;
+    display: flex;
+    align-items: center; /* Vertical alignment */
+    justify-content: center;
+}
+
+@media (max-width: 991px) {
+    .test-card {
+        width: 100%;
+        margin-top: 20px;
+        height:80%;
+    }
+}
+
+.page-bg-img-three {
+    background-image: linear-gradient(to right, rgb(46, 165, 133), rgb(69, 126, 186));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100%;
+    width: 100vw;
+}
+
+.accordion-container {
+    padding-left: 200px;
+    padding-right: 200px;
+}
+
+@media (max-width: 991px) {
+    .accordion-container {
+        padding: 10px;
+    }
+}
