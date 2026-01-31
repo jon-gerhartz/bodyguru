@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS password_reset_request (
 init_user_preferences = """
 CREATE TABLE IF NOT EXISTS user_preferences (
     user_id TEXT,
-    show_all_workouts BOOLEAN,
+    show_all_workouts BOOLEAN DEFAULT FALSE,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 """
