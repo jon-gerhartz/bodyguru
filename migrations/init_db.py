@@ -208,7 +208,8 @@ VALUES
 	(1, 'lifting'),
     (2, 'cardio'),
     (3, 'hiit'),
-    (4, 'functional')
+    (4, 'functional'),
+    (5, 'functional patterns')
 ON CONFLICT (name)
 DO NOTHING;
 """
@@ -229,5 +230,13 @@ CREATE TABLE IF NOT EXISTS password_reset_request (
     user_id TEXT,
     url_var TEXT,
     created_at TEXT
+);
+"""
+
+init_user_preferences = """
+CREATE TABLE IF NOT EXISTS user_preferences (
+    user_id TEXT,
+    show_all_workouts BOOLEAN,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 """
