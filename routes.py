@@ -1,10 +1,18 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, abort
 from exp.landing import landing_data
 import json
 from lib.crud import *
 from lib.data_meta import *
 from lib.reports import run_report_flow
 from utils.app_functions import auth_required
+import os
+from werkzeug.utils import secure_filename
+
+# Allowed video extensions for upload endpoint
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'webm', 'mkv'}
+
+def allowed_video_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
 
 main = Blueprint('main', __name__)
 
@@ -80,6 +88,27 @@ def details(exercise_id):
 def delete_exercise(exercise_id):
     resp = delete_exercise_item(exercise_id)
     return redirect(url_for('main.library'))
+
+
+@main.route('/upload-video', methods=['POST'])
+def upload_video():
+    provided_key = request.headers.get('X-API-KEY')
+    expected_key = current_app.config.get('UPLOAD_API_KEY')
+    if not expected_key or provided_key != expected_key:
+        abort(401)
+
+    if 'file' not in request.files:
+        return {'error': 'No file part in request'}, 400
+    file = request.files['file']
+    if file.filename == '':
+        return {'error': 'No file selected'}, 400
+    if not allowed_video_file(file.filename):
+        return {'error': 'Invalid video type. Allowed: ' + ', '.join(ALLOWED_VIDEO_EXTENSIONS)}, 400
+    filename = secure_filename(file.filename)
+    upload_folder = os.path.join(current_app.root_path, 'static', 'workout_content')
+    os.makedirs(upload_folder, exist_ok=True)
+    file.save(os.path.join(upload_folder, filename))
+    return {'message': 'Video uploaded successfully', 'filename': filename}, 201
 
 
 @main.route('/musclegroups', methods=['GET'])

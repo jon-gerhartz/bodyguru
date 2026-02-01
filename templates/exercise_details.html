@@ -3,6 +3,12 @@
 <div class="container-fluid">
 	<div class='row top-div'>
 		<div class='col'>
+        <a href="{{ url_for('main.library') }}#exercise-{{ exercise['id'][0] }}">Back to Exercises</a>
+		</div>
+	</div>
+	<br>
+	<div class='row'>
+		<div class='col'>
 			<h1>{{exercise['name'][0]}}</h1>
 			<form method="post" action="{{ url_for('main.details', exercise_id=exercise['id'][0]) }}">
 				<div class="mb-3">

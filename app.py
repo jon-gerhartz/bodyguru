@@ -10,6 +10,9 @@ load_dotenv()
 app = Flask(__name__)
 app.register_blueprint(main)
 app.register_blueprint(auth)
+# application secret
 app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
+# API key for protected video upload endpoint
+app.config['UPLOAD_API_KEY'] = os.getenv('UPLOAD_API_KEY')
 app.add_template_filter(fmt_dt)
 app.add_template_filter(fmt_dt_str)
