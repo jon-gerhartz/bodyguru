@@ -34,7 +34,11 @@ def dashboard(user_id):
 def library():
     user_id = session['user_id']
     if request.method == 'GET':
-        exercises = get_exercises(user_id=user_id)
+        show_all_workouts = session['show_all_workouts']
+        if show_all_workouts:
+            exercises = get_exercises_fp(user_id=user_id)
+        else:
+            exercises = get_exercises(user_id=user_id)
         col_data = create_filer_col_dict(exercise_filter_cols, exercises)
         return render_template('library.html', exercises=exercises, data_cols=exercise_filter_cols, col_data=col_data)
     else:
@@ -61,6 +65,12 @@ def exercises():
 @main.route('/exercise-details/<exercise_id>', methods=['GET', 'POST'])
 @auth_required
 def details(exercise_id):
+    if request.method == 'POST':
+        description = request.form.get('description')
+        update_exercise_details(exercise_id, description)
+        flash("Exercise successfully updated")
+        return redirect(url_for('main.details', exercise_id=exercise_id))
+
     exercise = get_exercise(exercise_id)
     return render_template('exercise_details.html', exercise=exercise)
 

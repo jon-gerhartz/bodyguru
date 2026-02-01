@@ -1,7 +1,8 @@
-from lib.crud import get_user_auth, create_user, update_pass, create_pass_reset_request, get_pass_reset_user
+from lib.crud import get_user_auth, create_user, update_pass, create_pass_reset_request, get_pass_reset_user, get_user_preferences
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from utils.app_functions import generate_password_hash, check_password
 from lib.sendgrid import send_reset_email
+import pandas as pd
 
 auth = Blueprint('auth', __name__)
 
@@ -22,6 +23,9 @@ def login():
         session['user_email'] = email
         user_id = user_df['id'][0]
         session['user_id'] = user_id
+        user_preferences = get_user_preferences(user_id)
+        show_all_workouts = user_preferences['show_all_workouts'][0]
+        session['show_all_workouts'] = str(show_all_workouts)
         return redirect(url_for('main.dashboard', user_id=user_id))
     else:
         flash(
@@ -48,6 +52,9 @@ def signup():
     session['authenticated'] = True
     session['user_email'] = email
     session['user_id'] = user_id
+    user_preferences = get_user_preferences(user_id)
+    show_all_workouts = user_preferences['show_all_workouts'][0]
+    session['show_all_workouts'] = show_all_workouts
     return redirect(url_for('main.dashboard', user_id=user_id))
 
 
