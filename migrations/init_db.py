@@ -151,7 +151,8 @@ VALUES
 	(1, 'lift'),
     (2, 'functional'),
     (3, 'cardio'),
-    (4, 'bodyweight')
+    (4, 'bodyweight'),
+    (5, 'functional patterns')
 ON CONFLICT (name)
 DO NOTHING;
 """
@@ -197,7 +198,8 @@ VALUES
     (16, 'traps'),
     (17, 'abductors'),
     (18, 'adductors'),
-    (19, 'forearms')
+    (19, 'forearms'),
+    (20, 'full body')
 ON CONFLICT (name)
 DO NOTHING;
 """
@@ -208,7 +210,8 @@ VALUES
 	(1, 'lifting'),
     (2, 'cardio'),
     (3, 'hiit'),
-    (4, 'functional')
+    (4, 'functional'),
+    (5, 'functional patterns')
 ON CONFLICT (name)
 DO NOTHING;
 """
@@ -230,4 +233,16 @@ CREATE TABLE IF NOT EXISTS password_reset_request (
     url_var TEXT,
     created_at TEXT
 );
+"""
+
+init_user_preferences = """
+CREATE TABLE IF NOT EXISTS user_preferences (
+    user_id TEXT,
+    show_all_workouts BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+"""
+
+add_column_video_slug = """
+ALTER TABLE exercises ADD COLUMN video_slug TEXT default null;
 """

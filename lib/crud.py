@@ -11,6 +11,13 @@ def get_exercises(user_id=''):
     return df
 
 
+def get_exercises_fp(user_id=''):
+    q_get_exercises_fp_users_formatted = q_get_exercises_fp_users.format(
+        user_id=user_id)
+    df = execute_pd(q_get_exercises_fp_users_formatted)
+    return df
+
+
 def get_exercise(lookup_val, by_name=False):
     if by_name == True:
         lookup_col = 'name'
@@ -37,6 +44,20 @@ def delete_exercise_item(exercise_id):
         exercise_id=exercise_id)
     execute_query(q_delete_exercise_formatted)
     return 'exercise deleted'
+
+def update_exercise_details(exercise_id, description):
+    execute_query(q_update_exercise_details, id=exercise_id, description=description)
+    return 'updated'
+
+
+def update_exercise_video(exercise_id, video_slug):
+    execute_query(q_update_exercise_video, id=exercise_id, video_slug=video_slug)
+    return 'updated'
+
+
+def get_exercises_admin():
+    df = execute_pd(q_get_exercises_admin)
+    return df
 
 
 # crud functions for workout object
@@ -116,6 +137,10 @@ def create_user(email, name, password_hash, status_id=1):
     execute_query(q_create_user, id=user_id, email=email,
                   password_hash=password_hash, created_at=created_at,
                   name=name, status_id=status_id)
+
+    execute_query(q_set_user_preferences, user_id=user_id,
+                  show_all_workouts=False)
+
     return user_id
 
 
@@ -139,6 +164,13 @@ def get_user(lookup_val, by_email=False):
 def get_user_auth(email):
     q_get_user_auth_formatted = q_get_user_auth.format(email=email)
     df = execute_pd(q_get_user_auth_formatted)
+    return df
+
+
+def get_user_preferences(user_id):
+    q_get_user_preferences_formatted = q_get_user_preferences.format(
+        user_id=user_id)
+    df = execute_pd(q_get_user_preferences_formatted)
     return df
 
 # crud functions for dropdown lookup

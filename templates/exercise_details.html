@@ -3,8 +3,19 @@
 <div class="container-fluid">
 	<div class='row top-div'>
 		<div class='col'>
+        <a href="{{ url_for('main.library') }}#exercise-{{ exercise['id'][0] }}">Back to Exercises</a>
+		</div>
+	</div>
+	<br>
+	<div class='row'>
+		<div class='col'>
 			<h1>{{exercise['name'][0]}}</h1>
-			<p>{{exercise['description'][0]}}</p>
+			<form method="post" action="{{ url_for('main.details', exercise_id=exercise['id'][0]) }}">
+				<div class="mb-3">
+					<textarea name="description" class="form-control" rows="4">{{ exercise['description'][0] }}</textarea>
+				</div>
+				<button type="submit" class="btn btn-primary">Save</button>
+			</form>
 		</div>
 	</div>
 	<br>
@@ -16,6 +27,19 @@
 		</div>
 		<br>
 	{% endif %}
+{% if exercise['video_slug'][0] %}
+    <div class="row mb-4">
+        <div class="col text-center">
+            <video controls
+                   class="mx-auto d-block"
+                   style="max-width:400px; width:100%; height:auto;"
+                   preload="metadata">
+                <source src="{{ url_for('main.video', filename=exercise['video_slug'][0]) }}" type="video/mp4">
+                Your browser does not support HTML5 video.
+            </video>
+        </div>
+    </div>
+{% endif %}
 
 	<div class='row'>
 		<div class='col'>

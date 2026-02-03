@@ -15,6 +15,23 @@ LEFT JOIN user_exercises f on f.exercise_id = a.id
 WHERE (f.user_id = '{user_id}' OR f.user_id is null) and deleted = 0;
 """
 
+# queries for exercises
+q_get_exercises_fp_users = """
+SELECT 
+	a.id
+	,a.name
+	,b.name as type
+	,c.name as equipment
+	,a.description
+	,d.name as muscle_group_name
+FROM exercises a
+JOIN exercise_types b on b.id = a.exercise_type_id
+JOIN exercise_equipment c on c.id = a.exercise_equipment_id
+JOIN muscle_group_names d on d.id = a.muscle_group_id
+LEFT JOIN user_exercises f on f.exercise_id = a.id
+WHERE (f.user_id = '{user_id}' OR b.id = 5::text) and deleted = 0;
+"""
+
 q_get_exercise = """
 SELECT *
 FROM (
@@ -27,6 +44,7 @@ FROM (
 		,d.name as muscle_group_name
         ,f.user_id is null as is_default_exercise
         ,a.link
+        ,a.video_slug
 	FROM exercises a
 	JOIN exercise_types b on b.id = a.exercise_type_id
 	JOIN exercise_equipment c on c.id = a.exercise_type_id
@@ -44,6 +62,32 @@ q_delete_exercise = """
 UPDATE exercises
 SET deleted = 1
 WHERE id = '{exercise_id}'
+"""
+
+q_update_exercise_details = """
+UPDATE exercises
+   SET description = :description
+ WHERE id = :id
+"""
+
+q_update_exercise_video = """
+UPDATE exercises
+   SET video_slug = :video_slug
+ WHERE id = :id
+"""
+
+q_get_exercises_admin = """
+SELECT
+    a.id
+    ,a.name
+    ,a.exercise_type_id
+    ,b.name as type
+    ,a.description
+    ,a.video_slug
+FROM exercises a
+JOIN exercise_types b on b.id = a.exercise_type_id
+WHERE a.deleted = 0
+ORDER BY name;
 """
 
 # queries for workouts
@@ -130,6 +174,11 @@ INSERT INTO users(id, email, password_hash, created_at, name, status_id)
 VALUES (:id, :email, :password_hash, :created_at, :name, :status_id)
 """
 
+q_set_user_preferences = """
+INSERT INTO user_preferences(user_id, show_all_workouts)
+VALUES( :user_id, :show_all_workouts)
+"""
+
 q_update_user = """
 UPDATE users
 set
@@ -156,6 +205,14 @@ SELECT
 	,password_hash
 FROM users
 WHERE email = '{email}'
+"""
+
+q_get_user_preferences = """
+SELECT
+	user_id
+    , show_all_workouts
+FROM user_preferences
+WHERE user_id = '{user_id}'
 """
 
 # queries for user_workout

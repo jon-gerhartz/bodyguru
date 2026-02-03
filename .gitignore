@@ -6,3 +6,8 @@
 .json
 __pycache__
 /static/user_reports
+/static/workout_content
+
+# ignore local test upload script
+# (Python version)
+/upload_test_video.py

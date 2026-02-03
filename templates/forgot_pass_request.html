@@ -32,27 +32,29 @@
                     <div class="row gx-5 row-x-pad">
                         <div class="col-md-6 order-2 order-md-1 col-top-pad">
                             <div class="row pb-3">
-                                <p class="fs-4 text-white">Reset Password</p>
+                                <p class="fs-4 text-white">Forgot Password</p>
                             </div>
-                            <form action="{{url_for('auth.submit_pass_reset')}}" method="post" enctype="multipart/form-data">
-                                <input type="hidden" name="url_var" value="{{ url_var }}">
-                                <div class="row pb-4">
-                                    <div class="col">
-                                    <input type="password" name="password" id="password" class="form-control" placeholder="Password" aria-label="Name">
-                                    </div>
-                                    <div class="col">
-                                    <input type="password" name="confirm_password" id="confirmPassword"class="form-control" placeholder="Confirm Password" aria-label="Email">
-                                    </div>
+                            {% if sent %}
+                                <div class="row pb-3">
+                                    <p class="fs-5 text-white">If an account exists for that email, a reset link has been sent.</p>
                                 </div>
-                                <div class="row pb-2">
-                                    <div class="d-grid gap-2">
-                                        <button class="btn btn-primary" type="submit">Submit</button>
+                            {% else %}
+                                <form action="{{url_for('auth.forgot_password')}}" method="post" enctype="multipart/form-data">
+                                    <div class="row pb-4">
+                                        <div class="col">
+                                        <input type="email" name="email" id="email" class="form-control" placeholder="Email" aria-label="Email">
+                                        </div>
                                     </div>
-                                </div>
-                            </form>
+                                    <div class="row pb-2">
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-primary" type="submit">Send Reset Email</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            {% endif %}
                             <div class="row pb-3">
                                 <div class="col text-center">
-                                    <p class="fw-lighter text-white fs-6">Complete signup for full access</p>
+                                    <a class='text-white' href="{{url_for('main.index')}}">Return Home</a>
                                 </div>
                             </div>
                         </div>

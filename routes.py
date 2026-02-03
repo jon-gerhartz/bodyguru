@@ -1,10 +1,19 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, abort
 from exp.landing import landing_data
 import json
 from lib.crud import *
 from lib.data_meta import *
 from lib.reports import run_report_flow
 from utils.app_functions import auth_required
+import os
+from werkzeug.utils import secure_filename
+from utils.storage import get_storage_config, get_s3_client, get_bucket_name, presign_get_url
+
+# Allowed video extensions for upload endpoint
+ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'webm', 'mkv'}
+
+def allowed_video_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
 
 main = Blueprint('main', __name__)
 
@@ -34,7 +43,11 @@ def dashboard(user_id):
 def library():
     user_id = session['user_id']
     if request.method == 'GET':
-        exercises = get_exercises(user_id=user_id)
+        show_all_workouts = session['show_all_workouts']
+        if show_all_workouts:
+            exercises = get_exercises_fp(user_id=user_id)
+        else:
+            exercises = get_exercises(user_id=user_id)
         col_data = create_filer_col_dict(exercise_filter_cols, exercises)
         return render_template('library.html', exercises=exercises, data_cols=exercise_filter_cols, col_data=col_data)
     else:
@@ -61,6 +74,12 @@ def exercises():
 @main.route('/exercise-details/<exercise_id>', methods=['GET', 'POST'])
 @auth_required
 def details(exercise_id):
+    if request.method == 'POST':
+        description = request.form.get('description')
+        update_exercise_details(exercise_id, description)
+        flash("Exercise successfully updated")
+        return redirect(url_for('main.details', exercise_id=exercise_id))
+
     exercise = get_exercise(exercise_id)
     return render_template('exercise_details.html', exercise=exercise)
 
@@ -70,6 +89,50 @@ def details(exercise_id):
 def delete_exercise(exercise_id):
     resp = delete_exercise_item(exercise_id)
     return redirect(url_for('main.library'))
+
+
+@main.route('/upload-video', methods=['POST'])
+def upload_video():
+    provided_key = request.headers.get('X-API-KEY')
+    expected_key = current_app.config.get('UPLOAD_API_KEY')
+    if not expected_key or provided_key != expected_key:
+        abort(401)
+
+    if 'file' not in request.files:
+        return {'error': 'No file part in request'}, 400
+    file = request.files['file']
+    if file.filename == '':
+        return {'error': 'No file selected'}, 400
+    if not allowed_video_file(file.filename):
+        return {'error': 'Invalid video type. Allowed: ' + ', '.join(ALLOWED_VIDEO_EXTENSIONS)}, 400
+    filename = secure_filename(file.filename)
+    storage_config = get_storage_config()
+    s3_client = get_s3_client(storage_config)
+    bucket_name = get_bucket_name(storage_config)
+    object_key = f"workout_content/{filename}"
+    s3_client.put_object(
+        Bucket=bucket_name,
+        Key=object_key,
+        Body=file.stream,
+        ContentType=file.mimetype or "application/octet-stream",
+    )
+    return {'message': 'Video uploaded successfully', 'filename': filename}, 201
+
+
+@main.route('/video/<path:filename>', methods=['GET'])
+@auth_required
+def video(filename):
+    storage_config = get_storage_config()
+    s3_client = get_s3_client(storage_config)
+    bucket_name = get_bucket_name(storage_config)
+    object_key = f"workout_content/{filename}"
+    presigned_url = presign_get_url(
+        s3_client,
+        bucket_name,
+        object_key,
+        storage_config.presign_expires_seconds,
+    )
+    return redirect(presigned_url)
 
 
 @main.route('/musclegroups', methods=['GET'])
