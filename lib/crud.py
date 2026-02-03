@@ -50,6 +50,16 @@ def update_exercise_details(exercise_id, description):
     return 'updated'
 
 
+def update_exercise_video(exercise_id, video_slug):
+    execute_query(q_update_exercise_video, id=exercise_id, video_slug=video_slug)
+    return 'updated'
+
+
+def get_exercises_admin():
+    df = execute_pd(q_get_exercises_admin)
+    return df
+
+
 # crud functions for workout object
 def get_workouts(user_id=''):
     q_get_workouts_all_formatted = q_get_workouts_all.format(user_id=user_id)

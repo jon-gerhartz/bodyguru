@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block main %}
+<div class="container mt-4">
+    <h1 class="mb-3">Exercise Video Admin</h1>
+    <p class="text-muted">Upload multiple videos at once. Each file maps to its exercise row.</p>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input id="exerciseFilter" type="text" class="form-control" placeholder="Filter exercises by name">
+        </div>
+        <div class="col-md-4">
+            <select id="typeFilter" class="form-select">
+                <option value="">All types</option>
+                {% for t in exercise_types %}
+                    <option value="{{ t['id'] }}">{{ t['name'] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <form method="POST" enctype="multipart/form-data">
+        <div class="table-responsive">
+            <table class="table table-striped align-middle" id="exerciseTable">
+                <thead>
+                    <tr>
+                        <th>Exercise</th>
+                        <th>Current Video</th>
+                        <th>Upload New Video</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exercise in exercises %}
+                    <tr>
+                        <td data-type-id="{{ exercise['exercise_type_id'] }}">{{ exercise['name'] }}</td>
+                        <td>{{ exercise['video_slug'] or '-' }}</td>
+                        <td>
+                            <input
+                                class="form-control"
+                                type="file"
+                                name="video_{{ exercise['id'] }}"
+                                accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,video/x-matroska">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <button class="btn btn-primary" type="submit">Upload Selected Videos</button>
+    </form>
+</div>
+<script>
+    const filterInput = document.getElementById('exerciseFilter');
+    const table = document.getElementById('exerciseTable');
+    const typeFilter = document.getElementById('typeFilter');
+    function applyFilters() {
+        const term = filterInput.value.toLowerCase();
+        const typeId = typeFilter.value;
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach((row) => {
+            const nameCell = row.querySelector('td');
+            const nameText = nameCell ? nameCell.textContent.toLowerCase() : '';
+            const rowTypeId = nameCell ? nameCell.getAttribute('data-type-id') : '';
+            const matchesName = nameText.includes(term);
+            const matchesType = !typeId || rowTypeId === typeId;
+            row.style.display = (matchesName && matchesType) ? '' : 'none';
+        });
+    }
+    filterInput.addEventListener('input', applyFilters);
+    typeFilter.addEventListener('change', applyFilters);
+</script>
+{% endblock %}

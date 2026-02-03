@@ -70,6 +70,26 @@ UPDATE exercises
  WHERE id = :id
 """
 
+q_update_exercise_video = """
+UPDATE exercises
+   SET video_slug = :video_slug
+ WHERE id = :id
+"""
+
+q_get_exercises_admin = """
+SELECT
+    a.id
+    ,a.name
+    ,a.exercise_type_id
+    ,b.name as type
+    ,a.description
+    ,a.video_slug
+FROM exercises a
+JOIN exercise_types b on b.id = a.exercise_type_id
+WHERE a.deleted = 0
+ORDER BY name;
+"""
+
 # queries for workouts
 q_get_workouts_all = """
 SELECT 

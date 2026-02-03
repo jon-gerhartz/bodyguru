@@ -31,6 +31,9 @@
 							<li class='nav-item'><a class="nav-link" href="{{url_for('main.library')}}">Exercises</a></li>
 							<li class='nav-item'><a class="nav-link" href="{{url_for('main.workouts')}}">Workouts</a></li>
 							<li class='nav-item'><a class="nav-link" href="{{url_for('main.logs')}}">Logs</a></li>
+							{% if session.user_email == config['ADMIN_EMAIL'] %}
+							<li class='nav-item'><a class="nav-link" href="{{url_for('admin.exercise_videos')}}">Admin</a></li>
+							{% endif %}
 						</ul>
 						<ul class="navbar-nav ms-auto">	
 							<li class="nav-item dropdown">

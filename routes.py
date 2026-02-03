@@ -7,6 +7,7 @@ from lib.reports import run_report_flow
 from utils.app_functions import auth_required
 import os
 from werkzeug.utils import secure_filename
+from utils.storage import get_storage_config, get_s3_client, get_bucket_name, presign_get_url
 
 # Allowed video extensions for upload endpoint
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'webm', 'mkv'}
@@ -105,10 +106,33 @@ def upload_video():
     if not allowed_video_file(file.filename):
         return {'error': 'Invalid video type. Allowed: ' + ', '.join(ALLOWED_VIDEO_EXTENSIONS)}, 400
     filename = secure_filename(file.filename)
-    upload_folder = os.path.join(current_app.root_path, 'static', 'workout_content')
-    os.makedirs(upload_folder, exist_ok=True)
-    file.save(os.path.join(upload_folder, filename))
+    storage_config = get_storage_config()
+    s3_client = get_s3_client(storage_config)
+    bucket_name = get_bucket_name(storage_config)
+    object_key = f"workout_content/{filename}"
+    s3_client.put_object(
+        Bucket=bucket_name,
+        Key=object_key,
+        Body=file.stream,
+        ContentType=file.mimetype or "application/octet-stream",
+    )
     return {'message': 'Video uploaded successfully', 'filename': filename}, 201
+
+
+@main.route('/video/<path:filename>', methods=['GET'])
+@auth_required
+def video(filename):
+    storage_config = get_storage_config()
+    s3_client = get_s3_client(storage_config)
+    bucket_name = get_bucket_name(storage_config)
+    object_key = f"workout_content/{filename}"
+    presigned_url = presign_get_url(
+        s3_client,
+        bucket_name,
+        object_key,
+        storage_config.presign_expires_seconds,
+    )
+    return redirect(presigned_url)
 
 
 @main.route('/musclegroups', methods=['GET'])

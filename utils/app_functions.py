@@ -1,6 +1,6 @@
 import bcrypt
 from functools import wraps
-from flask import redirect, url_for, session
+from flask import abort, current_app, redirect, url_for, session
 import random
 import string
 
@@ -30,5 +30,17 @@ def auth_required(f):
     def decorated(*args, **kwargs):
         if not session.get('authenticated'):
             return redirect(url_for('main.index'))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('authenticated'):
+            return redirect(url_for('main.index'))
+        admin_email = current_app.config.get('ADMIN_EMAIL')
+        if not admin_email or session.get('user_email') != admin_email:
+            return abort(403)
         return f(*args, **kwargs)
     return decorated
