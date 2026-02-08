@@ -1,8 +1,9 @@
-from extensions import execute_query, execute_pd
+from extensions import execute_query, execute_pd, Session
 import pandas as pd
 from lib.queries import *
 import uuid
 from datetime import datetime
+from sqlalchemy import bindparam, text
 
 
 def get_exercises(user_id=''):
@@ -85,7 +86,7 @@ def create_workout(workout_name, w_type, description, workout_data, user_id=''):
     if user_id != '':
         execute_query(q_create_user_workout,
                       user_id=user_id, workout_id=workout_id)
-    return 'done'
+    return workout_id
 
 
 def delete_workout_item(workout_id):
@@ -93,6 +94,16 @@ def delete_workout_item(workout_id):
         workout_id=workout_id)
     execute_query(q_delete_workout_formatted)
     return 'workout deleted'
+
+
+def update_workout_data(workout_id, workout_data):
+    execute_query(q_update_workout_data, id=workout_id, workout_data=workout_data)
+    return 'updated'
+
+
+def update_workout_meta(workout_id, name, description):
+    execute_query(q_update_workout_meta, id=workout_id, name=name, description=description)
+    return 'updated'
 
 
 # crud functions for workout_logs object
@@ -194,6 +205,16 @@ def get_exercise_equipment():
 def get_workout_types():
     df = execute_pd(q_get_workout_types_all)
     return df
+
+# workout exercise lookup
+def get_exercises_by_names(names):
+    if not names:
+        return pd.DataFrame(columns=["name", "video_slug"])
+    stmt = text(q_get_exercises_by_names).bindparams(bindparam("names", expanding=True))
+    with Session() as session:
+        result = session.execute(stmt, {"names": list(names)})
+        rows = result.fetchall()
+        return pd.DataFrame(rows, columns=["name", "video_slug"])
 
 # crud functions for password reset
 

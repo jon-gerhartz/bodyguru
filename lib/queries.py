@@ -132,6 +132,19 @@ SET deleted = 1
 WHERE id = '{workout_id}'
 """
 
+q_update_workout_data = """
+UPDATE workouts
+SET workout_data = :workout_data
+WHERE id = :id
+"""
+
+q_update_workout_meta = """
+UPDATE workouts
+SET name = :name,
+    description = :description
+WHERE id = :id
+"""
+
 # queries for workout_logs
 q_get_workout_logs_all = """
 SELECT
@@ -258,6 +271,15 @@ SELECT distinct id, name from exercise_types;
 
 q_get_exercise_equipment_all = """
 SELECT distinct id, name from exercise_equipment;
+"""
+
+q_get_exercises_by_names = """
+SELECT
+    name,
+    video_slug
+FROM exercises
+WHERE deleted = 0
+  AND name IN :names
 """
 
 q_get_workout_types_all = """

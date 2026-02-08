@@ -11,30 +11,169 @@
 	<div class='row'>
 		<div class='col'>
 			{% for set in workout_data %}
-				<div class='row'>
-					<div class='col'>
-						<h4>Set {{loop.index}}</h4>
-						<ol>
+				{% set set_index = loop.index %}
+				<div class="card mb-3">
+				<div class="card-header">
+						{{ set }} · {{ workout_data[set]|length }} moves
+				</div>
+					<div class="card-body">
+						<div class="d-flex flex-wrap gap-2">
 							{% for exercise in workout_data[set] %}
-								<li>{{exercise}}</li>
+								{% set video_slug = exercise_lookup.get(exercise) %}
+								{% set video_type = '' %}
+								{% if video_slug %}
+									{% set ext = video_slug.split('.')[-1] | lower %}
+									{% if ext == 'mov' %}
+										{% set video_type = 'video/mp4' %}
+									{% elif ext == 'webm' %}
+										{% set video_type = 'video/webm' %}
+									{% elif ext == 'mkv' %}
+										{% set video_type = 'video/x-matroska' %}
+									{% elif ext == 'avi' %}
+										{% set video_type = 'video/x-msvideo' %}
+									{% else %}
+										{% set video_type = 'video/mp4' %}
+									{% endif %}
+								{% endif %}
+								<div class="exercise-row badge rounded-pill text-bg-light border d-inline-flex align-items-center gap-2 py-2 px-3"
+									data-exercise-name="{{ exercise }}"
+									data-video-slug="{{ video_slug or '' }}"
+									data-video-url="{{ url_for('main.video', filename=video_slug) if video_slug else '' }}"
+									data-video-type="{{ video_type }}"
+									data-set-index="{{ set_index }}"
+									data-ex-index="{{ loop.index }}">
+									<span>{{ exercise }}</span>
+									{% if video_slug %}
+										<span class="badge bg-primary">Watch</span>
+									{% else %}
+										<span class="badge bg-secondary">No video</span>
+									{% endif %}
+								</div>
 							{% endfor %}
-						</ol>
+						</div>
 					</div>
 				</div>
 			{% endfor %}
 		</div>
 	</div>
 	<br>
-	<div class='row'>
-		<div class='col'>
+	<div class='row mt-4'>
+		<div class='col d-flex gap-2 align-items-center'>
 			{% if workout['is_default_workout'][0] == 1 %}
-				<button type="button" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Cannot delete default workout">Delete Workout</button>
+				<button type="button" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Cannot delete default workout" aria-label="Delete workout" title="Delete workout">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+						<path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5.5a.5.5 0 0 1 .5-.5h.5A.5.5 0 0 1 9 6v6a.5.5 0 0 1-1 0V6zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+						<path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5.5l1-1h3l1 1H14a1 1 0 0 1 1 1zM4 4v9a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4H4z"/>
+					</svg>
+					<span class="visually-hidden">Delete Workout</span>
+				</button>
 			{% else %}
-				<button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteWorkout">Delete Workout</button>
+				<button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteWorkout" aria-label="Delete workout" title="Delete workout">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+						<path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5.5a.5.5 0 0 1 .5-.5h.5A.5.5 0 0 1 9 6v6a.5.5 0 0 1-1 0V6zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+						<path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5.5l1-1h3l1 1H14a1 1 0 0 1 1 1zM4 4v9a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4H4z"/>
+					</svg>
+					<span class="visually-hidden">Delete Workout</span>
+				</button>
+			{% endif %}
+			{% if workout['is_default_workout'][0] == 1 %}
+				<button type="button" class="btn btn-outline-secondary" disabled aria-label="Edit workout" title="Edit workout">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+						<path d="M15.502 1.94a.5.5 0 0 1 0 .706l-1.439 1.439-2.121-2.12 1.439-1.44a.5.5 0 0 1 .707 0l1.414 1.415z"/>
+						<path d="M14.061 4.146 11.94 2.025 4 9.964V12h2.036l8.025-7.854z"/>
+						<path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a.5.5 0 0 0 0-1h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 0-1 0v11z"/>
+					</svg>
+					<span class="visually-hidden">Edit Workout</span>
+				</button>
+			{% else %}
+				<button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editWorkoutModal" aria-label="Edit workout" title="Edit workout">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+						<path d="M15.502 1.94a.5.5 0 0 1 0 .706l-1.439 1.439-2.121-2.12 1.439-1.44a.5.5 0 0 1 .707 0l1.414 1.415z"/>
+						<path d="M14.061 4.146 11.94 2.025 4 9.964V12h2.036l8.025-7.854z"/>
+						<path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a.5.5 0 0 0 0-1h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 0-1 0v11z"/>
+					</svg>
+					<span class="visually-hidden">Edit Workout</span>
+				</button>
 			{% endif %}
 		</div>
 	</div>
 </div>
+
+<div class="offcanvas offcanvas-bottom video-sheet" tabindex="-1" id="videoSheet" aria-labelledby="videoSheetLabel">
+	<div class="offcanvas-header">
+		<h5 class="offcanvas-title" id="videoSheetLabel">Exercise Video</h5>
+		<button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+	</div>
+	<div class="offcanvas-body small">
+		<div class="mb-2" id="videoSheetExercise"></div>
+		<video id="exerciseVideo" class="w-100 video-player" controls playsinline preload="metadata">
+			<source id="exerciseVideoSource" src="" type="video/mp4">
+		</video>
+		<div id="videoFallback" class="text-muted mt-2" style="display:none;">No video available for this exercise.</div>
+		<div class="d-flex justify-content-between mt-3 video-actions">
+			<button type="button" class="btn btn-outline-secondary" id="prevExercise">Prev</button>
+			<button type="button" class="btn btn-primary" id="nextExercise">Next</button>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" tabindex="-1" id="editWorkoutModal" aria-labelledby="editWorkoutLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable workout-edit-modal">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editWorkoutLabel">Edit Workout</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<form id="workoutEditForm" method="post" action="{{ url_for('main.update_workout', workout_id=workout['id'][0]) }}">
+					<div class="row g-3 mb-3">
+						<div class="col-12">
+							<label class="form-label">Workout name</label>
+							<input type="text" class="form-control" name="name" value="{{ workout['name'][0] }}">
+						</div>
+						<div class="col-12">
+							<label class="form-label">Description</label>
+							<textarea class="form-control" name="description" rows="2">{{ workout['description'][0] }}</textarea>
+						</div>
+					</div>
+					<input type="hidden" name="workout_data" id="workoutDataInput">
+					<div class="mb-3 exercise-search-group">
+						<label class="form-label small text-muted">Search exercises</label>
+						<div class="input-group input-group-sm">
+							<input type="text" class="form-control" id="exerciseSearchInput" placeholder="Start typing an exercise name">
+							<button type="button" class="btn btn-outline-secondary" id="addSearchExercise">Add</button>
+						</div>
+						<div class="list-group exercise-search-results" id="exerciseSearchResults" style="display:none;"></div>
+					</div>
+					<div class="d-flex justify-content-between align-items-center mb-2">
+						<span class="text-muted small">Click a set to make it active.</span>
+						<button type="button" class="btn btn-sm btn-outline-primary" id="addSetBtn">Add Set</button>
+					</div>
+					<div id="workoutEditor">
+						{% for set in workout_data %}
+							<div class="workout-set border rounded p-3 mb-3">
+								<div class="d-flex gap-2 align-items-center mb-2">
+									<input type="text" class="form-control form-control-sm set-name" value="{{ set }}">
+									<button type="button" class="btn btn-sm btn-outline-danger remove-set">Remove Set</button>
+								</div>
+								<div class="exercise-list d-flex flex-wrap gap-2"></div>
+								{% for exercise in workout_data[set] %}
+									<div class="d-none exercise-seed" data-exercise="{{ exercise }}"></div>
+								{% endfor %}
+							</div>
+						{% endfor %}
+					</div>
+					<datalist id="exerciseOptions"></datalist>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-outline-secondary" id="resetWorkoutEditor">Reset</button>
+				<button type="submit" form="workoutEditForm" class="btn btn-primary">Save Changes</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <div class="modal" tabindex="-1" id="deleteWorkout">
 	<div class="modal-dialog">
 	  <div class="modal-content">
@@ -59,5 +198,420 @@
 <script>
 	const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
 	const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))		
+
+	const exerciseRows = Array.from(document.querySelectorAll('.exercise-row'));
+	const videoSheet = new bootstrap.Offcanvas(document.getElementById('videoSheet'));
+	const videoEl = document.getElementById('exerciseVideo');
+	const videoSource = document.getElementById('exerciseVideoSource');
+	const fallbackEl = document.getElementById('videoFallback');
+	const exerciseLabel = document.getElementById('videoSheetExercise');
+	const nextBtn = document.getElementById('nextExercise');
+	const prevBtn = document.getElementById('prevExercise');
+	let currentIndex = -1;
+	let pendingVideoUrl = '';
+	let pendingVideoType = '';
+	let pendingHasVideo = false;
+	let draggedExerciseName = '';
+
+	function openExerciseAt(index) {
+		if (index < 0 || index >= exerciseRows.length) {
+			return;
+		}
+		currentIndex = index;
+		const row = exerciseRows[index];
+		const exerciseName = row.getAttribute('data-exercise-name');
+		const videoSlug = row.getAttribute('data-video-slug');
+		const videoUrl = row.getAttribute('data-video-url');
+		const videoType = row.getAttribute('data-video-type');
+
+		exerciseRows.forEach(r => r.classList.remove('active'));
+		row.classList.add('active');
+		row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+		exerciseLabel.textContent = exerciseName;
+		if (videoSlug && videoUrl) {
+			pendingVideoUrl = videoUrl;
+			pendingVideoType = videoType || 'video/mp4';
+			pendingHasVideo = true;
+			videoEl.style.display = '';
+			fallbackEl.style.display = 'none';
+		} else {
+			pendingVideoUrl = '';
+			pendingVideoType = '';
+			pendingHasVideo = false;
+			videoSource.removeAttribute('src');
+			videoEl.style.display = 'none';
+			fallbackEl.style.display = '';
+		}
+		videoSheet.show();
+	}
+
+	function moveToNext(delta) {
+		const nextIndex = currentIndex + delta;
+		if (nextIndex < 0 || nextIndex >= exerciseRows.length) {
+			return;
+		}
+		openExerciseAt(nextIndex);
+	}
+
+	exerciseRows.forEach((row, index) => {
+		row.addEventListener('click', () => openExerciseAt(index));
+	});
+
+	nextBtn.addEventListener('click', () => moveToNext(1));
+	prevBtn.addEventListener('click', () => moveToNext(-1));
+
+	document.getElementById('videoSheet').addEventListener('shown.bs.offcanvas', () => {
+		if (pendingHasVideo && pendingVideoUrl) {
+			videoSource.src = pendingVideoUrl;
+			videoSource.type = pendingVideoType || 'video/mp4';
+			videoEl.load();
+		} else {
+			videoSource.removeAttribute('src');
+			videoEl.load();
+		}
+	});
+
+	videoEl.addEventListener('error', () => {
+		const mediaError = videoEl.error;
+		const errorCode = mediaError ? mediaError.code : 'unknown';
+		console.warn('Video error', errorCode, mediaError);
+	});
+	videoEl.addEventListener('loadedmetadata', () => {
+		console.log('Video loadedmetadata', videoEl.duration);
+	});
+
+	const workoutEditor = document.getElementById('workoutEditor');
+	const addSetBtn = document.getElementById('addSetBtn');
+	const workoutEditForm = document.getElementById('workoutEditForm');
+	const workoutDataInput = document.getElementById('workoutDataInput');
+	const resetWorkoutEditor = document.getElementById('resetWorkoutEditor');
+	const initialWorkoutHtml = workoutEditor ? workoutEditor.innerHTML : '';
+	const exerciseSearchInput = document.getElementById('exerciseSearchInput');
+	const exerciseSearchResults = document.getElementById('exerciseSearchResults');
+	const addSearchExercise = document.getElementById('addSearchExercise');
+	const exerciseOptions = document.getElementById('exerciseOptions');
+	let allExercises = [];
+	let activeSetEl = null;
+
+	function bindWorkoutEditorActions(root) {
+		if (!root) {
+			return;
+		}
+		root.querySelectorAll('.workout-set').forEach(setEl => {
+			setEl.addEventListener('click', () => {
+				root.querySelectorAll('.workout-set').forEach(el => el.classList.remove('active-set'));
+				setEl.classList.add('active-set');
+				activeSetEl = setEl;
+			});
+		});
+		root.querySelectorAll('.remove-set').forEach(btn => {
+			btn.addEventListener('click', () => {
+				const setEl = btn.closest('.workout-set');
+				if (setEl) {
+					setEl.remove();
+				}
+			});
+		});
+		root.querySelectorAll('.exercise-seed').forEach(seed => {
+			const name = seed.getAttribute('data-exercise');
+			const setEl = seed.closest('.workout-set');
+			if (name && setEl) {
+				addExerciseToSet(setEl, name);
+			}
+			seed.remove();
+		});
+		attachSetDnD(root);
+	}
+
+	function addSet() {
+		if (!workoutEditor) {
+			return;
+		}
+		const setCount = workoutEditor.querySelectorAll('.workout-set').length + 1;
+		const setEl = document.createElement('div');
+		setEl.className = 'workout-set border rounded p-3 mb-3';
+		setEl.innerHTML = `
+			<div class="d-flex gap-2 align-items-center mb-2">
+				<input type="text" class="form-control form-control-sm set-name" value="Set ${setCount}">
+				<button type="button" class="btn btn-sm btn-outline-danger remove-set">Remove Set</button>
+			</div>
+			<div class="exercise-list d-flex flex-wrap gap-2"></div>
+		`;
+		workoutEditor.appendChild(setEl);
+		bindWorkoutEditorActions(setEl);
+		setEl.click();
+	}
+
+	if (addSetBtn) {
+		addSetBtn.addEventListener('click', addSet);
+	}
+
+	if (resetWorkoutEditor) {
+		resetWorkoutEditor.addEventListener('click', () => {
+			if (!workoutEditor) {
+				return;
+			}
+			workoutEditor.innerHTML = initialWorkoutHtml;
+			bindWorkoutEditorActions(workoutEditor);
+			activeSetEl = workoutEditor.querySelector('.workout-set');
+			if (activeSetEl) {
+				activeSetEl.classList.add('active-set');
+			}
+		});
+	}
+
+	if (workoutEditForm) {
+		bindWorkoutEditorActions(workoutEditor);
+		activeSetEl = workoutEditor ? workoutEditor.querySelector('.workout-set') : null;
+		if (activeSetEl) {
+			activeSetEl.classList.add('active-set');
+		}
+		workoutEditForm.addEventListener('submit', (event) => {
+			if (!workoutEditor || !workoutDataInput) {
+				return;
+			}
+			const data = {};
+			workoutEditor.querySelectorAll('.workout-set').forEach(setEl => {
+				const setNameInput = setEl.querySelector('.set-name');
+				const setName = setNameInput ? setNameInput.value.trim() : '';
+				if (!setName) {
+					return;
+				}
+				const exercises = [];
+				setEl.querySelectorAll('.exercise-pill').forEach(pill => {
+					const name = pill.getAttribute('data-exercise-name');
+					if (name) {
+						exercises.push(name);
+					}
+				});
+				if (exercises.length > 0) {
+					data[setName] = exercises;
+				}
+			});
+			if (Object.keys(data).length === 0) {
+				event.preventDefault();
+				alert('Please add at least one set with exercises before saving.');
+				return;
+			}
+			workoutDataInput.value = JSON.stringify(data);
+		});
+	}
+
+	const editWorkoutModalEl = document.getElementById('editWorkoutModal');
+	if (editWorkoutModalEl) {
+		editWorkoutModalEl.addEventListener('shown.bs.modal', () => {
+			if (workoutEditor) {
+				attachSetDnD(workoutEditor);
+			}
+		});
+	}
+
+	function renderExerciseOptions() {
+		if (!exerciseOptions) {
+			return;
+		}
+		exerciseOptions.innerHTML = '';
+		allExercises.forEach(name => {
+			const option = document.createElement('option');
+			option.value = name;
+			exerciseOptions.appendChild(option);
+		});
+	}
+
+	function setSearchResults(items) {
+		if (!exerciseSearchResults) {
+			return;
+		}
+		if (!items.length) {
+			exerciseSearchResults.style.display = 'none';
+			exerciseSearchResults.innerHTML = '';
+			return;
+		}
+		exerciseSearchResults.innerHTML = '';
+		items.forEach(name => {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'list-group-item list-group-item-action';
+			button.textContent = name;
+			button.addEventListener('click', () => {
+				addExerciseToActiveSet(name);
+				exerciseSearchResults.style.display = 'none';
+				exerciseSearchResults.innerHTML = '';
+				exerciseSearchInput.value = '';
+			});
+			exerciseSearchResults.appendChild(button);
+		});
+		positionSearchResults();
+		exerciseSearchResults.style.display = 'block';
+	}
+
+	function positionSearchResults() {
+		if (!exerciseSearchResults || !exerciseSearchInput) {
+			return;
+		}
+		const inputRect = exerciseSearchInput.getBoundingClientRect();
+		const modalBody = exerciseSearchInput.closest('.modal-body');
+		const bodyRect = modalBody ? modalBody.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+		const availableAbove = inputRect.top - bodyRect.top - 8;
+		const maxHeight = Math.max(120, Math.min(availableAbove, 260));
+		exerciseSearchResults.style.left = `${inputRect.left}px`;
+		exerciseSearchResults.style.width = `${inputRect.width}px`;
+		exerciseSearchResults.style.top = `${Math.max(bodyRect.top + 8, inputRect.top - maxHeight - 8)}px`;
+		exerciseSearchResults.style.maxHeight = `${maxHeight}px`;
+	}
+
+	function addExerciseToActiveSet(name) {
+		const targetSet = activeSetEl || (workoutEditor ? workoutEditor.querySelector('.workout-set') : null);
+		if (!targetSet) {
+			return;
+		}
+		addExerciseToSet(targetSet, name);
+	}
+
+	function addExerciseToSet(setEl, name) {
+		const list = setEl ? setEl.querySelector('.exercise-list') : null;
+		if (!list) {
+			return;
+		}
+		const existing = Array.from(list.querySelectorAll('.exercise-pill')).some(pill => {
+			return pill.getAttribute('data-exercise-name') === name;
+		});
+		if (existing) {
+			return;
+		}
+		const pill = document.createElement('div');
+		pill.className = 'exercise-pill badge rounded-pill text-bg-light border d-inline-flex align-items-center gap-2 py-2 px-3';
+		pill.setAttribute('draggable', 'true');
+		pill.setAttribute('data-exercise-name', name);
+		pill.innerHTML = `
+			<span>${name}</span>
+			<button type="button" class="btn btn-sm btn-link p-0 exercise-pill-remove" aria-label="Remove">×</button>
+		`;
+		pill.querySelector('.exercise-pill-remove').addEventListener('click', () => {
+			pill.remove();
+		});
+		pill.addEventListener('dragstart', (event) => {
+			event.dataTransfer.setData('text/plain', name);
+			event.dataTransfer.effectAllowed = 'move';
+			pill.classList.add('is-dragging');
+			draggedExerciseName = name;
+		});
+		pill.addEventListener('dragend', () => {
+			pill.classList.remove('is-dragging');
+			draggedExerciseName = '';
+		});
+		list.appendChild(pill);
+	}
+
+	function attachSetDnD(root) {
+		if (!root || root.dataset.dndBound === 'true') {
+			return;
+		}
+		root.dataset.dndBound = 'true';
+		const clearTargets = () => {
+			root.querySelectorAll('.workout-set.is-drop-target').forEach(el => el.classList.remove('is-drop-target'));
+			root.querySelectorAll('.exercise-list.is-drop-target').forEach(el => el.classList.remove('is-drop-target'));
+		};
+		const getNameFromEvent = (event) => {
+			const name = draggedExerciseName || event.dataTransfer.getData('text/plain');
+			return name;
+		};
+		const removeOrigin = (name) => {
+			const escaped = (window.CSS && CSS.escape) ? CSS.escape(name) : name.replace(/"/g, '\\"');
+			const origin = root.querySelector(`.exercise-pill[data-exercise-name="${escaped}"]`);
+			if (origin) {
+				origin.remove();
+			}
+		};
+		root.addEventListener('dragover', (event) => {
+			const targetSet = event.target.closest('.workout-set');
+			if (!targetSet) {
+				return;
+			}
+			event.preventDefault();
+			event.dataTransfer.dropEffect = 'move';
+			clearTargets();
+			targetSet.classList.add('is-drop-target');
+			const list = targetSet.querySelector('.exercise-list');
+			if (list) {
+				list.classList.add('is-drop-target');
+			}
+		});
+		root.addEventListener('dragleave', (event) => {
+			const targetSet = event.target.closest('.workout-set');
+			if (!targetSet) {
+				return;
+			}
+			targetSet.classList.remove('is-drop-target');
+			const list = targetSet.querySelector('.exercise-list');
+			if (list) {
+				list.classList.remove('is-drop-target');
+			}
+		});
+		root.addEventListener('drop', (event) => {
+			const targetSet = event.target.closest('.workout-set');
+			if (!targetSet) {
+				return;
+			}
+			event.preventDefault();
+			clearTargets();
+			const name = getNameFromEvent(event);
+			if (!name) {
+				return;
+			}
+			removeOrigin(name);
+			addExerciseToSet(targetSet, name);
+			draggedExerciseName = '';
+		});
+	}
+
+	if (exerciseSearchInput) {
+		exerciseSearchInput.addEventListener('input', () => {
+			const query = exerciseSearchInput.value.trim().toLowerCase();
+			if (!query) {
+				setSearchResults([]);
+				return;
+			}
+			const matches = allExercises
+				.filter(name => name.toLowerCase().includes(query))
+				.slice(0, 8);
+			setSearchResults(matches);
+		});
+	}
+
+	window.addEventListener('scroll', () => {
+		if (exerciseSearchResults && exerciseSearchResults.style.display === 'block') {
+			positionSearchResults();
+		}
+	}, true);
+
+	window.addEventListener('resize', () => {
+		if (exerciseSearchResults && exerciseSearchResults.style.display === 'block') {
+			positionSearchResults();
+		}
+	});
+
+	if (addSearchExercise) {
+		addSearchExercise.addEventListener('click', () => {
+			const name = exerciseSearchInput.value.trim();
+			if (!name) {
+				return;
+			}
+			addExerciseToActiveSet(name);
+			exerciseSearchInput.value = '';
+			setSearchResults([]);
+		});
+	}
+
+	fetch('/exercises')
+		.then(resp => resp.json())
+		.then(data => {
+			if (data && Array.isArray(data.data)) {
+				allExercises = data.data.map(item => item.name).filter(Boolean);
+				renderExerciseOptions();
+			}
+		})
+		.catch(() => {});
 </script>
 {% endblock %}

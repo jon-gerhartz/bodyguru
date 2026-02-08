@@ -1,9 +1,16 @@
-async function getOptions(url, land_id, required=false, showDefaultText=false, value_col='') {
+async function getOptions(url, land_id, required=false, showDefaultText=false, value_col='', force=false) {
 		const resp = await fetch(url)
 		const jsonData = await resp.json() 
 		const data = await jsonData.data	
 		const length = await data.length
 		const land = document.getElementById(land_id)
+		if (!land) {
+			return
+		}
+		if (!force && land.dataset.optionsLoaded === 'true') {
+			return
+		}
+		land.innerHTML = ''
 		if (required){
 			land.setAttribute('required', true)
 		}
@@ -32,8 +39,9 @@ async function getOptions(url, land_id, required=false, showDefaultText=false, v
 				option.setAttribute('value', optObj.name)
 			}
 			option.setAttribute('objId', optObj.id)
-    		land.appendChild(option)
+			land.appendChild(option)
 		}
+		land.dataset.optionsLoaded = 'true'
 	}
 
 async function loadItem(url) {
@@ -235,4 +243,3 @@ function searchResults(self){
 				}
 		}
 	};
-

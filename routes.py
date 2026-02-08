@@ -12,8 +12,10 @@ from utils.storage import get_storage_config, get_s3_client, get_bucket_name, pr
 # Allowed video extensions for upload endpoint
 ALLOWED_VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'webm', 'mkv'}
 
+
 def allowed_video_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_VIDEO_EXTENSIONS
+
 
 main = Blueprint('main', __name__)
 
@@ -44,7 +46,7 @@ def library():
     user_id = session['user_id']
     if request.method == 'GET':
         show_all_workouts = session['show_all_workouts']
-        if show_all_workouts:
+        if show_all_workouts == 'TRUE':
             exercises = get_exercises_fp(user_id=user_id)
         else:
             exercises = get_exercises(user_id=user_id)
@@ -190,13 +192,107 @@ def workouts():
         return redirect(url_for('main.workouts'))
 
 
+@main.route('/create-workout-builder', methods=['POST'])
+@auth_required
+def create_workout_builder():
+    payload = request.get_json(silent=True) or {}
+    name = (payload.get('name') or 'New Rad Workout').strip()
+    description = (payload.get('description') or '').strip()
+    workout_type_id = payload.get('workout_type_id')
+    sets = payload.get('sets') or []
+    if not workout_type_id:
+        return {'error': 'Workout type is required.'}, 400
+    if not isinstance(sets, list) or len(sets) == 0:
+        return {'error': 'At least one set is required.'}, 400
+
+    workout_data = {}
+    for idx, set_obj in enumerate(sets, start=1):
+        if not isinstance(set_obj, dict):
+            continue
+        set_name = (set_obj.get('name') or f"Set {idx}").strip()
+        exercises = set_obj.get('exercises') or []
+        if not isinstance(exercises, list):
+            continue
+        cleaned = [str(item).strip() for item in exercises if str(item).strip()]
+        if cleaned:
+            workout_data[set_name] = cleaned
+
+    if not workout_data:
+        return {'error': 'Sets must include exercises.'}, 400
+
+    user_id = session['user_id']
+    workout_id = create_workout(
+        name,
+        workout_type_id,
+        description,
+        json.dumps(workout_data),
+        user_id=user_id,
+    )
+    return {'workout_id': workout_id}, 201
+
+
 @main.route('/workout-details/<workout_id>', methods=['GET', 'POST'])
 @auth_required
 def workout_details(workout_id):
     workout = get_workout(workout_id)
     workout_data_str = workout['workout_data'][0]
     workout_data = json.loads(workout_data_str)
-    return render_template('workout_details.html', workout=workout, workout_data=workout_data)
+    exercise_names = []
+    for set_key in workout_data:
+        for exercise_name in workout_data[set_key]:
+            if exercise_name not in exercise_names:
+                exercise_names.append(exercise_name)
+    exercise_df = get_exercises_by_names(exercise_names)
+    exercise_lookup = dict(zip(exercise_df["name"], exercise_df["video_slug"]))
+    return render_template(
+        'workout_details.html',
+        workout=workout,
+        workout_data=workout_data,
+        exercise_lookup=exercise_lookup
+    )
+
+
+@main.route('/update-workout/<workout_id>', methods=['POST'])
+@auth_required
+def update_workout(workout_id):
+    workout = get_workout(workout_id)
+    if workout['is_default_workout'][0] == 1:
+        flash("Default workouts cannot be edited.")
+        return redirect(url_for('main.workout_details', workout_id=workout_id))
+
+    name = (request.form.get('name') or '').strip()
+    description = (request.form.get('description') or '').strip()
+    raw_data = request.form.get('workout_data', '')
+    try:
+        parsed = json.loads(raw_data) if raw_data else {}
+    except json.JSONDecodeError:
+        flash("Workout data is invalid JSON.")
+        return redirect(url_for('main.workout_details', workout_id=workout_id))
+
+    if not isinstance(parsed, dict):
+        flash("Workout data must be a JSON object.")
+        return redirect(url_for('main.workout_details', workout_id=workout_id))
+
+    cleaned = {}
+    for key, value in parsed.items():
+        set_name = str(key).strip()
+        if not set_name:
+            continue
+        if not isinstance(value, list):
+            continue
+        exercises = [str(item).strip() for item in value if str(item).strip()]
+        if exercises:
+            cleaned[set_name] = exercises
+
+    if not cleaned:
+        flash("Workout must include at least one set with exercises.")
+        return redirect(url_for('main.workout_details', workout_id=workout_id))
+
+    if name:
+        update_workout_meta(workout_id, name, description)
+    update_workout_data(workout_id, json.dumps(cleaned))
+    flash("Workout updated.")
+    return redirect(url_for('main.workout_details', workout_id=workout_id))
 
 
 @main.route('/get_workout/<workout_id>', methods=['GET'])

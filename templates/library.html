@@ -6,6 +6,9 @@
 			<h1>Exercises</h1>
 			<p>Add, update or remove exercises</p>
 		</div>
+		<div class="col-auto d-flex align-items-start justify-content-end">
+			<button type="button" class="btn btn-outline-primary" id="startWorkoutBuilder">Create Workout</button>
+		</div>
 	</div>
 	<br>
 	<div class='row'>
@@ -20,7 +23,13 @@
         {% for i, v in exercises.iterrows() %}
             <div id="exercise-{{ v['id'] }}" class='row' style='padding-bottom: 15px;'>
 					<div class="card" style="border:none;background-color: #f5f5f5;">
-						<div class="card-body">
+						<div class="card-body workout-card-body" data-exercise-name="{{ v['name'] }}">
+							<button type="button" class="btn btn-sm btn-light workout-select-btn" aria-pressed="false" aria-label="Select exercise">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+									<circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+									<path class="checkmark" d="M10.97 5.97a.75.75 0 0 1 0 1.06L7.5 10.5 5.53 8.53a.75.75 0 0 1 1.06-1.06l.91.91 2.41-2.41a.75.75 0 0 1 1.06 0z" fill="#fff"/>
+								</svg>
+							</button>
                     <h5 name="{{v['name']}}" parentId="exercise-{{ v['id'] }}" class="card-title" searchtag='resultData'>{{v['name']}}</h5>
 							<p class="card-text">{{v['description']}}</p>
                     <span class="badge text-bg-dark" tag='type' parentId="exercise-{{ v['id'] }}">{{v['type']}}</span>
@@ -40,6 +49,59 @@
 			</button>
 			<br>
 			<br>
+		</div>
+	</div>
+</div>
+
+<div class="workout-builder-bar" id="workoutBuilderBar" style="display:none;">
+	<div class="card shadow-sm">
+		<div class="card-header d-flex justify-content-between align-items-center">
+			<div class="d-flex align-items-center gap-2">
+				<strong>Creating Workout</strong>
+				<span class="badge text-bg-primary" id="selectedCountBadge">0</span>
+			</div>
+			<div class="d-flex align-items-center gap-2">
+				<button type="button" class="btn btn-sm btn-primary" id="workoutBuilderNext">Next</button>
+				<button type="button" class="btn btn-sm btn-outline-secondary" id="workoutBuilderCancel" aria-label="Cancel">×</button>
+			</div>
+		</div>
+		<div class="card-body py-2">
+			<span class="text-muted">Select exercises to build your workout.</span>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="workoutBuilderModal" tabindex="-1" aria-labelledby="workoutBuilderLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable workout-builder-modal">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="workoutBuilderLabel">Create Workout</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="row g-3 mb-3">
+					<div class="col-12">
+						<label class="form-label">Workout name</label>
+						<input type="text" class="form-control" id="builderWorkoutName" value="New Rad Workout">
+					</div>
+					<div class="col-12">
+						<label class="form-label">Workout type</label>
+						<select class="form-select" id="builderWorkoutType"></select>
+					</div>
+					<div class="col-12">
+						<label class="form-label">Description</label>
+						<textarea class="form-control" id="builderWorkoutDescription" rows="2"></textarea>
+					</div>
+				</div>
+				<div id="builderSets"></div>
+				<button type="button" class="btn btn-outline-primary btn-sm" id="builderAddSet">
+					<span aria-hidden="true">＋</span> Add Set
+				</button>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button>
+				<button type="button" class="btn btn-primary" id="builderSaveWorkout">Save</button>
+			</div>
 		</div>
 	</div>
 </div>
@@ -83,13 +145,307 @@
     </div>
   </div>
 </div>
-<script type="text/javascript" src="{{url_for('static', filename='js/scripts.js')}}"></script>
-<script type="text/javascript" >
-	window.onload = function loadPageOptions() {
-		getOptions("{{url_for('main.muscle_groups')}}", "muscleGroup", false, false, "id");
-		getOptions("{{url_for('main.exercise_types')}}", "exerciseType", false, false, "id");
-		getOptions("{{url_for('main.exercise_equipment')}}", "exerciseEquipment", false, false, "id");
-	};
-	createFilters({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv');
-</script>
+{% block scripts %}
+	{{ super() }}
+	<script type="text/javascript">
+		window.addEventListener('load', () => {
+			getOptions("{{url_for('main.muscle_groups')}}", "muscleGroup", false, false, "id");
+			getOptions("{{url_for('main.exercise_types')}}", "exerciseType", false, false, "id");
+			getOptions("{{url_for('main.exercise_equipment')}}", "exerciseEquipment", false, false, "id");
+			getOptions("{{url_for('main.workout_types')}}", "builderWorkoutType", true, true, "id");
+			createFilters({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv');
+
+			const workoutBuilderBar = document.getElementById('workoutBuilderBar');
+			const startWorkoutBuilder = document.getElementById('startWorkoutBuilder');
+			const workoutBuilderCancel = document.getElementById('workoutBuilderCancel');
+			const workoutBuilderNext = document.getElementById('workoutBuilderNext');
+			const selectedCountBadge = document.getElementById('selectedCountBadge');
+			const workoutBuilderModalEl = document.getElementById('workoutBuilderModal');
+			const workoutBuilderModal = workoutBuilderModalEl && window.bootstrap ? new window.bootstrap.Modal(workoutBuilderModalEl) : null;
+			const builderSets = document.getElementById('builderSets');
+			const builderAddSet = document.getElementById('builderAddSet');
+			const builderSaveWorkout = document.getElementById('builderSaveWorkout');
+			const builderWorkoutName = document.getElementById('builderWorkoutName');
+			const builderWorkoutType = document.getElementById('builderWorkoutType');
+			const builderWorkoutDescription = document.getElementById('builderWorkoutDescription');
+
+			let builderActive = false;
+			let selectedExercises = new Map();
+			let sets = [];
+
+			function updateSelectedCount() {
+				if (selectedCountBadge) {
+					selectedCountBadge.textContent = `${selectedExercises.size}`;
+				}
+			}
+
+			function toggleBuilder(active) {
+				builderActive = active;
+				document.body.classList.toggle('workout-builder-active', active);
+				if (workoutBuilderBar) {
+					workoutBuilderBar.style.display = active ? 'block' : 'none';
+				}
+				if (!active) {
+					selectedExercises.clear();
+					updateSelectedCount();
+					document.querySelectorAll('.workout-select-btn').forEach(btn => {
+						btn.classList.remove('selected');
+						btn.setAttribute('aria-pressed', 'false');
+					});
+				} else {
+					syncSelectionButtons();
+				}
+			}
+
+			function setSelectedState(cardBody, selected) {
+				const btn = cardBody.querySelector('.workout-select-btn');
+				if (!btn) return;
+				btn.classList.toggle('selected', selected);
+				btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+			}
+
+			function toggleExerciseSelection(cardBody) {
+				const name = cardBody.getAttribute('data-exercise-name');
+				if (!name) return;
+				if (selectedExercises.has(name)) {
+					selectedExercises.delete(name);
+					setSelectedState(cardBody, false);
+				} else {
+					selectedExercises.set(name, true);
+					setSelectedState(cardBody, true);
+				}
+				updateSelectedCount();
+			}
+
+			document.querySelectorAll('.workout-card-body').forEach(body => {
+				body.addEventListener('click', (event) => {
+					if (!builderActive) return;
+					if (event.target.closest('a')) return;
+					toggleExerciseSelection(body);
+				});
+				const btn = body.querySelector('.workout-select-btn');
+				if (btn) {
+					btn.addEventListener('click', (event) => {
+						event.stopPropagation();
+						if (!builderActive) return;
+						toggleExerciseSelection(body);
+					});
+				}
+			});
+
+			if (startWorkoutBuilder) {
+				startWorkoutBuilder.addEventListener('click', () => {
+					toggleBuilder(true);
+				});
+			}
+
+			if (workoutBuilderCancel) {
+				workoutBuilderCancel.addEventListener('click', () => {
+					if (selectedExercises.size > 0) {
+						const confirmDiscard = window.confirm('Discard your workout selections?');
+						if (!confirmDiscard) {
+							return;
+						}
+					}
+					toggleBuilder(false);
+				});
+			}
+
+			function buildInitialSets() {
+				const all = Array.from(selectedExercises.keys());
+				sets = [{
+					name: 'Set 1',
+					exercises: all
+				}];
+			}
+
+			function renderSets() {
+				if (!builderSets) return;
+				builderSets.innerHTML = '';
+				sets.forEach((setObj, index) => {
+					const setCard = document.createElement('div');
+					setCard.className = 'card mb-3 builder-set-card';
+					setCard.dataset.setIndex = `${index}`;
+					setCard.innerHTML = `
+						<div class="card-header d-flex justify-content-between align-items-center">
+							<input type="text" class="form-control form-control-sm builder-set-name" value="${setObj.name}">
+							<button type="button" class="btn btn-sm btn-outline-danger builder-remove-set">Remove</button>
+						</div>
+						<div class="card-body">
+							<div class="d-flex flex-wrap gap-2 builder-pill-zone"></div>
+						</div>
+					`;
+					const zone = setCard.querySelector('.builder-pill-zone');
+					setObj.exercises.forEach(name => {
+						zone.appendChild(createExercisePill(name));
+					});
+					builderSets.appendChild(setCard);
+				});
+				attachSetEvents();
+			}
+
+	function createExercisePill(name) {
+		const pill = document.createElement('div');
+		pill.className = 'builder-pill badge rounded-pill text-bg-light border d-inline-flex align-items-center gap-2 py-2 px-3';
+		pill.setAttribute('draggable', 'true');
+		pill.dataset.exerciseName = name;
+				pill.innerHTML = `
+					<span>${name}</span>
+					<button type="button" class="btn btn-sm btn-link p-0 builder-pill-remove" aria-label="Remove">×</button>
+				`;
+		pill.querySelector('.builder-pill-remove').addEventListener('click', () => {
+			removeExerciseFromSets(name);
+			pill.remove();
+		});
+		pill.addEventListener('dragstart', (event) => {
+			event.dataTransfer.setData('text/plain', name);
+			event.dataTransfer.effectAllowed = 'move';
+			pill.classList.add('is-dragging');
+		});
+		pill.addEventListener('dragend', () => {
+			pill.classList.remove('is-dragging');
+		});
+		return pill;
+	}
+
+			function removeExerciseFromSets(name) {
+				sets.forEach(setObj => {
+					setObj.exercises = setObj.exercises.filter(ex => ex !== name);
+				});
+				updateSelectedCountFromSets();
+			}
+
+			function updateSelectedCountFromSets() {
+				const unique = new Set();
+				sets.forEach(setObj => {
+					setObj.exercises.forEach(ex => unique.add(ex));
+				});
+				selectedExercises = new Map(Array.from(unique).map(name => [name, true]));
+				updateSelectedCount();
+				syncSelectionButtons();
+			}
+
+			function syncSelectionButtons() {
+				document.querySelectorAll('.workout-card-body').forEach(body => {
+					const name = body.getAttribute('data-exercise-name');
+					if (!name) return;
+					setSelectedState(body, selectedExercises.has(name));
+				});
+			}
+
+			function attachSetEvents() {
+				builderSets.querySelectorAll('.builder-remove-set').forEach(btn => {
+					btn.addEventListener('click', () => {
+						const card = btn.closest('.builder-set-card');
+						if (!card) return;
+						const idx = Number(card.dataset.setIndex);
+						sets.splice(idx, 1);
+						renderSets();
+						updateSelectedCountFromSets();
+					});
+				});
+				builderSets.querySelectorAll('.builder-set-name').forEach((input, idx) => {
+					input.addEventListener('input', () => {
+						sets[idx].name = input.value.trim() || `Set ${idx + 1}`;
+					});
+				});
+				builderSets.querySelectorAll('.builder-set-card').forEach(card => {
+					const idx = Number(card.dataset.setIndex);
+					const zone = card.querySelector('.builder-pill-zone');
+					const handleDrop = (event) => {
+						event.preventDefault();
+						card.classList.remove('is-drop-target');
+						if (zone) zone.classList.remove('is-drop-target');
+						const name = event.dataTransfer.getData('text/plain');
+						if (!name) return;
+						if (!sets[idx].exercises.includes(name)) {
+							removeExerciseFromSets(name);
+							sets[idx].exercises.push(name);
+							renderSets();
+						}
+					};
+					card.addEventListener('dragover', (event) => {
+						event.preventDefault();
+						event.dataTransfer.dropEffect = 'move';
+						card.classList.add('is-drop-target');
+					});
+					card.addEventListener('dragleave', () => {
+						card.classList.remove('is-drop-target');
+					});
+					card.addEventListener('drop', handleDrop);
+					if (zone) {
+						zone.addEventListener('dragover', (event) => {
+							event.preventDefault();
+							event.dataTransfer.dropEffect = 'move';
+							zone.classList.add('is-drop-target');
+						});
+						zone.addEventListener('dragleave', () => {
+							zone.classList.remove('is-drop-target');
+						});
+						zone.addEventListener('drop', handleDrop);
+					}
+				});
+			}
+
+			if (builderAddSet) {
+				builderAddSet.addEventListener('click', () => {
+					sets.push({ name: `Set ${sets.length + 1}`, exercises: [] });
+					renderSets();
+				});
+			}
+
+			if (workoutBuilderNext) {
+				workoutBuilderNext.addEventListener('click', () => {
+					if (selectedExercises.size === 0) {
+						alert('Select at least one exercise.');
+						return;
+					}
+					buildInitialSets();
+					renderSets();
+					if (workoutBuilderModal) {
+						workoutBuilderModal.show();
+					} else {
+						alert('Modal library not available.');
+					}
+				});
+			}
+
+			if (builderSaveWorkout) {
+				builderSaveWorkout.addEventListener('click', async () => {
+					if (!builderWorkoutType || !builderWorkoutType.value) {
+						alert('Please select a workout type.');
+						return;
+					}
+					const payload = {
+						name: builderWorkoutName.value.trim() || 'New Rad Workout',
+						description: builderWorkoutDescription.value.trim(),
+						workout_type_id: builderWorkoutType.value,
+						sets: sets.map((setObj, idx) => ({
+							name: setObj.name || `Set ${idx + 1}`,
+							exercises: setObj.exercises
+						}))
+					};
+					const resp = await fetch('/create-workout-builder', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify(payload)
+					});
+					if (!resp.ok) {
+						const data = await resp.json().catch(() => ({}));
+						alert(data.error || 'Failed to create workout.');
+						return;
+					}
+					const data = await resp.json();
+					toggleBuilder(false);
+					if (workoutBuilderModal) {
+						workoutBuilderModal.hide();
+					}
+					if (data.workout_id) {
+						window.location.href = `/workout-details/${data.workout_id}`;
+					}
+				});
+			}
+		});
+	</script>
+{% endblock %}
 {% endblock %}
