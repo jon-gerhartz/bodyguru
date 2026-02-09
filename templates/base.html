@@ -8,6 +8,7 @@
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
 		<link rel="stylesheet" href="{{url_for('static', filename='css/style.css')}}"/>
+		<link rel="stylesheet" href="{{url_for('static', filename='css/assistant.css')}}"/>
 		<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@600;700&display=swap" rel="stylesheet">
 		
 		<script type="text/javascript">   
@@ -69,8 +70,66 @@
 			{% block content %}
 			{% endblock %}
 		</div>
+		{% if session.authenticated %}
+		<div class="assistant-bubble" id="assistantBubble">
+			<button class="assistant-bubble-btn" type="button" aria-label="Open assistant">
+				<span class="assistant-bubble-icon" aria-hidden="true">
+					<svg viewBox="0 0 24 24" role="img" focusable="false">
+						<path d="M12 2l1 1.5v2h-2v-2L12 2zm-4.5 5h9a2.5 2.5 0 0 1 2.5 2.5v4A2.5 2.5 0 0 1 16.5 16h-9A2.5 2.5 0 0 1 5 13.5v-4A2.5 2.5 0 0 1 7.5 7zm2.5 4a1 1 0 1 0 0 .01zm5 0a1 1 0 1 0 0 .01zM7 18a5 5 0 0 1 10 0h-2a3 3 0 0 0-6 0H7z"></path>
+					</svg>
+				</span>
+				<span class="assistant-bubble-text">Guru</span>
+			</button>
+		</div>
+		<div class="assistant-panel" id="assistantPanel" aria-hidden="true" data-default-mode="{{ session.get('assistant_mode', 'approval') }}">
+			<div class="assistant-header">
+				<div class="assistant-title" aria-label="Assistant">
+					<svg viewBox="0 0 24 24" role="img" focusable="false" class="assistant-title-icon">
+						<path d="M12 2l1 1.5v2h-2v-2L12 2zm-4.5 5h9a2.5 2.5 0 0 1 2.5 2.5v4A2.5 2.5 0 0 1 16.5 16h-9A2.5 2.5 0 0 1 5 13.5v-4A2.5 2.5 0 0 1 7.5 7zm2.5 4a1 1 0 1 0 0 .01zm5 0a1 1 0 1 0 0 .01zM7 18a5 5 0 0 1 10 0h-2a3 3 0 0 0-6 0H7z"></path>
+					</svg>
+				</div>
+				<div class="assistant-controls">
+					<div class="assistant-controls-row">
+						<div class="assistant-convo">
+							<select id="assistantConversationSelect" class="assistant-mode"></select>
+							<button class="assistant-convo-new" type="button" id="assistantConversationNew" aria-label="New chat">+</button>
+							<button class="assistant-convo-rename" type="button" id="assistantConversationRename">Rename</button>
+							<div class="assistant-convo-rename-inline" id="assistantConversationRenameInline" hidden>
+								<input type="text" id="assistantConversationRenameInput" placeholder="Chat name" />
+								<button type="button" id="assistantConversationRenameSave">Save</button>
+								<button type="button" id="assistantConversationRenameCancel">Cancel</button>
+							</div>
+						</div>
+						<button class="assistant-close" type="button" id="assistantClose" aria-label="Close assistant">×</button>
+					</div>
+					<div class="assistant-controls-row">
+						<label class="assistant-mode-label" for="assistantMode">Mode</label>
+						<select id="assistantMode" class="assistant-mode">
+							<option value="approval">Approval required</option>
+							<option value="auto">Auto</option>
+						</select>
+					</div>
+				</div>
+			</div>
+			<div class="assistant-body" id="assistantMessages"></div>
+			<div class="assistant-activity" id="assistantActivity" aria-live="polite">
+				<div class="assistant-activity-header">
+					<span>Activity</span>
+					<button class="assistant-activity-toggle" type="button" id="assistantActivityToggle" aria-expanded="true">Hide</button>
+				</div>
+				<div class="assistant-activity-list" id="assistantActivityList"></div>
+			</div>
+			<div class="assistant-footer">
+				<input type="text" id="assistantInput" placeholder="Ask the assistant..." />
+				<button class="assistant-send" type="button" id="assistantSend">Send</button>
+			</div>
+		</div>
+		{% endif %}
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 		<script src="{{url_for('static',filename='js/scripts.js')}}"></script>
+		{% if session.authenticated %}
+		<script src="{{url_for('static',filename='js/assistant.js')}}"></script>
+		{% endif %}
 		{% block scripts %}
 		<script>
 			function toggleLoginSignup(){
