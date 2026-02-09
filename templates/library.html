@@ -1,25 +1,34 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container-fluid">
-	<div class='row top-div'>
-		<div class='col'>
-			<h1>Exercises</h1>
-			<p>Add, update or remove exercises</p>
+	<div class='row top-div align-items-center'>
+		<div class='col-12 d-flex align-items-center justify-content-between gap-2'>
+			<h1 class="mb-0">Exercises</h1>
+			<button type="button" class="btn btn-primary btn-icon" data-bs-toggle="modal" data-bs-target="#createExercise" aria-label="Add Exercise" title="Add Exercise">
+				<span aria-hidden="true">+</span>
+			</button>
 		</div>
-		<div class="col-auto d-flex align-items-start justify-content-end">
-			<button type="button" class="btn btn-outline-primary" id="startWorkoutBuilder">Create Workout</button>
+		<div class="col-12 mt-2">
+			<button type="button" class="btn btn-outline-primary w-100" id="startWorkoutBuilder">Create Workout</button>
 		</div>
 	</div>
 	<br>
-	<div class='row'>
-		<div class='col-md-2 side-div order-md-0 order-1' id='filterDiv'>
-			<button class="btn btn-dark" type="button" data-bs-toggle="collapse" data-bs-target="#filterInnerDiv" aria-expanded="true" aria-controls="#filterInnerDiv">
-				Filter Items
-			</button>
-			<br>
-			<br>
+	<div class='row library-controls'>
+		<div class='col-12' id='filterDiv'>
+			<div class="input-group mb-3">
+				<input class="form-control" type="search" placeholder="search by name" onkeyup="searchResults(this)">
+				<button class="btn btn-dark filter-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#filterInnerDiv" aria-expanded="false" aria-controls="filterInnerDiv" aria-label="Filter items" title="Filter items">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+						<path d="M6 10.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm7-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+						<path d="M1 10.5a.5.5 0 0 1 .5-.5H3a.5.5 0 0 1 0 1H1.5a.5.5 0 0 1-.5-.5zm0-5A.5.5 0 0 1 1.5 5H10a.5.5 0 0 1 0 1H1.5A.5.5 0 0 1 1 5.5zm9 5a.5.5 0 0 1 .5-.5H14.5a.5.5 0 0 1 0 1H10.5a.5.5 0 0 1-.5-.5z"/>
+					</svg>
+					<span class="filter-caret" aria-hidden="true"></span>
+				</button>
+			</div>
 		</div>
-		<div class='col-md-8 order-md-2 order-1'>
+	</div>
+	<div class='row'>
+		<div class='col-12 col-lg-8 mx-auto'>
         {% for i, v in exercises.iterrows() %}
             <div id="exercise-{{ v['id'] }}" class='row' style='padding-bottom: 15px;'>
 					<div class="card" style="border:none;background-color: #f5f5f5;">
@@ -42,13 +51,6 @@
 					</div>
 				</div>
 			{% endfor %}
-		</div>
-		<div class='col-md-2 order-md-2 order-0'>
-			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createExercise">
-			Add Exercise
-			</button>
-			<br>
-			<br>
 		</div>
 	</div>
 </div>
@@ -153,7 +155,6 @@
 			getOptions("{{url_for('main.exercise_types')}}", "exerciseType", false, false, "id");
 			getOptions("{{url_for('main.exercise_equipment')}}", "exerciseEquipment", false, false, "id");
 			getOptions("{{url_for('main.workout_types')}}", "builderWorkoutType", true, true, "id");
-			createFilters({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv');
 
 			const workoutBuilderBar = document.getElementById('workoutBuilderBar');
 			const startWorkoutBuilder = document.getElementById('startWorkoutBuilder');
@@ -162,6 +163,8 @@
 			const selectedCountBadge = document.getElementById('selectedCountBadge');
 			const workoutBuilderModalEl = document.getElementById('workoutBuilderModal');
 			const workoutBuilderModal = workoutBuilderModalEl && window.bootstrap ? new window.bootstrap.Modal(workoutBuilderModalEl) : null;
+			const root = document.documentElement;
+			const libraryControls = document.querySelector('.library-controls');
 			const builderSets = document.getElementById('builderSets');
 			const builderAddSet = document.getElementById('builderAddSet');
 			const builderSaveWorkout = document.getElementById('builderSaveWorkout');
@@ -172,6 +175,34 @@
 			let builderActive = false;
 			let selectedExercises = new Map();
 			let sets = [];
+
+			let updateBuilderBarHeight = null;
+			if (workoutBuilderBar && root) {
+				updateBuilderBarHeight = () => {
+					root.style.setProperty('--builder-bar-height', `${workoutBuilderBar.offsetHeight}px`);
+				};
+				updateBuilderBarHeight();
+				window.addEventListener('resize', updateBuilderBarHeight);
+			}
+
+			let updateLibraryControlsHeight = null;
+			if (libraryControls && root) {
+				updateLibraryControlsHeight = () => {
+					root.style.setProperty('--library-controls-height', `${libraryControls.offsetHeight}px`);
+				};
+				updateLibraryControlsHeight();
+				window.addEventListener('resize', updateLibraryControlsHeight);
+			}
+
+			createFilters({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv', false);
+			if (updateLibraryControlsHeight) {
+				updateLibraryControlsHeight();
+			}
+			const filterInner = document.getElementById('filterInnerDiv');
+			if (filterInner && updateLibraryControlsHeight) {
+				filterInner.addEventListener('shown.bs.collapse', updateLibraryControlsHeight);
+				filterInner.addEventListener('hidden.bs.collapse', updateLibraryControlsHeight);
+			}
 
 			function updateSelectedCount() {
 				if (selectedCountBadge) {
@@ -184,6 +215,9 @@
 				document.body.classList.toggle('workout-builder-active', active);
 				if (workoutBuilderBar) {
 					workoutBuilderBar.style.display = active ? 'block' : 'none';
+					if (updateBuilderBarHeight) {
+						updateBuilderBarHeight();
+					}
 				}
 				if (!active) {
 					selectedExercises.clear();
@@ -238,6 +272,7 @@
 					toggleBuilder(true);
 				});
 			}
+
 
 			if (workoutBuilderCancel) {
 				workoutBuilderCancel.addEventListener('click', () => {
