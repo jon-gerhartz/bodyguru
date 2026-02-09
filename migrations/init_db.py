@@ -111,7 +111,14 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS status_id TEXT DEFAULT 1;
 """
 
 add_status_foreign_key = """
-ALTER TABLE users ADD FOREIGN KEY (status_id) REFERENCES user_status(id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'users_status_id_fkey'
+    ) THEN
+        ALTER TABLE users ADD CONSTRAINT users_status_id_fkey FOREIGN KEY (status_id) REFERENCES user_status(id);
+    END IF;
+END $$;
 """
 
 # DDL for user tables
@@ -239,10 +246,45 @@ init_user_preferences = """
 CREATE TABLE IF NOT EXISTS user_preferences (
     user_id TEXT,
     show_all_workouts BOOLEAN DEFAULT TRUE,
+    assistant_mode TEXT DEFAULT 'approval',
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 """
 
 add_column_video_slug = """
-ALTER TABLE exercises ADD COLUMN video_slug TEXT default null;
+ALTER TABLE exercises ADD COLUMN IF NOT EXISTS video_slug TEXT default null;
+"""
+
+add_assistant_mode_to_user_preferences = """
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS assistant_mode TEXT DEFAULT 'approval';
+"""
+
+init_assistant_messages = """
+CREATE TABLE IF NOT EXISTS assistant_messages (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    conversation_id TEXT,
+    role TEXT,
+    content TEXT,
+    mode TEXT,
+    actions_json TEXT,
+    action_results_json TEXT,
+    created_at TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+"""
+
+add_assistant_messages_conversation_id = """
+ALTER TABLE assistant_messages ADD COLUMN IF NOT EXISTS conversation_id TEXT;
+"""
+
+init_assistant_conversations = """
+CREATE TABLE IF NOT EXISTS assistant_conversations (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    title TEXT,
+    created_at TEXT,
+    updated_at TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+);
 """

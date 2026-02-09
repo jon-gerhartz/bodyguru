@@ -145,6 +145,13 @@ SET name = :name,
 WHERE id = :id
 """
 
+q_update_assistant_message_actions = """
+UPDATE assistant_messages
+SET actions_json = :actions_json,
+    action_results_json = :action_results_json
+WHERE id = :id
+"""
+
 # queries for workout_logs
 q_get_workout_logs_all = """
 SELECT
@@ -188,8 +195,8 @@ VALUES (:id, :email, :password_hash, :created_at, :name, :status_id)
 """
 
 q_set_user_preferences = """
-INSERT INTO user_preferences(user_id, show_all_workouts)
-VALUES( :user_id, :show_all_workouts)
+INSERT INTO user_preferences(user_id, show_all_workouts, assistant_mode)
+VALUES( :user_id, :show_all_workouts, :assistant_mode)
 """
 
 q_update_user = """
@@ -224,8 +231,114 @@ q_get_user_preferences = """
 SELECT
 	user_id
     , show_all_workouts
+    , assistant_mode
 FROM user_preferences
 WHERE user_id = '{user_id}'
+"""
+
+q_update_user_preferences_mode = """
+UPDATE user_preferences
+SET assistant_mode = :assistant_mode
+WHERE user_id = :user_id
+"""
+
+# assistant messages
+q_create_assistant_message = """
+INSERT INTO assistant_messages (id, user_id, conversation_id, role, content, mode, actions_json, action_results_json, created_at)
+VALUES (:id, :user_id, :conversation_id, :role, :content, :mode, :actions_json, :action_results_json, :created_at)
+"""
+
+q_get_assistant_messages = """
+SELECT
+    id,
+    conversation_id,
+    role,
+    content,
+    mode,
+    actions_json,
+    action_results_json,
+    created_at
+FROM assistant_messages
+WHERE user_id = '{user_id}'
+ORDER BY created_at DESC
+LIMIT {limit}
+"""
+
+q_get_assistant_messages_by_conversation = """
+SELECT
+    id,
+    conversation_id,
+    role,
+    content,
+    mode,
+    actions_json,
+    action_results_json,
+    created_at
+FROM assistant_messages
+WHERE user_id = '{user_id}'
+  AND conversation_id = '{conversation_id}'
+ORDER BY created_at DESC
+LIMIT {limit}
+"""
+
+q_create_assistant_conversation = """
+INSERT INTO assistant_conversations (id, user_id, title, created_at, updated_at)
+VALUES (:id, :user_id, :title, :created_at, :updated_at)
+"""
+
+q_get_assistant_conversations = """
+SELECT
+    id,
+    title,
+    created_at,
+    updated_at
+FROM assistant_conversations
+WHERE user_id = '{user_id}'
+ORDER BY updated_at DESC
+"""
+
+q_update_assistant_conversation_title = """
+UPDATE assistant_conversations
+SET title = :title,
+    updated_at = :updated_at
+WHERE id = :id
+"""
+
+q_touch_assistant_conversation = """
+UPDATE assistant_conversations
+SET updated_at = :updated_at
+WHERE id = :id
+"""
+
+q_get_latest_assistant_conversation = """
+SELECT
+    id,
+    title,
+    created_at,
+    updated_at
+FROM assistant_conversations
+WHERE user_id = '{user_id}'
+ORDER BY updated_at DESC
+LIMIT 1
+"""
+
+q_get_assistant_conversation = """
+SELECT
+    id,
+    title,
+    created_at,
+    updated_at
+FROM assistant_conversations
+WHERE id = '{conversation_id}'
+  AND user_id = '{user_id}'
+LIMIT 1
+"""
+
+q_update_assistant_messages_conversation_for_user = """
+UPDATE assistant_messages
+SET conversation_id = :conversation_id
+WHERE user_id = :user_id
+  AND (conversation_id IS NULL OR conversation_id = '')
 """
 
 # queries for user_workout
