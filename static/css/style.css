@@ -10,6 +10,78 @@ body {
   z-index: 1055;
 }
 
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.library-controls {
+  position: sticky;
+  top: var(--library-controls-top, 0px);
+  z-index: 1020;
+  background-color: #fff;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  box-shadow: 0 8px 12px -10px rgba(15, 23, 42, 0.35);
+}
+
+.workout-builder-active {
+  --library-controls-top: var(--builder-bar-height, 0px);
+}
+
+.workout-builder-active .library-controls {
+  position: fixed;
+  top: var(--builder-bar-height, 0px);
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1040;
+}
+
+.workout-builder-active .library-controls + .row {
+  padding-top: var(--library-controls-height, 0px);
+}
+
+.filter-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-caret {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid currentColor;
+  transition: transform 0.2s ease;
+}
+
+.filter-toggle[aria-expanded="true"] .filter-caret {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 576px) {
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+
+  .top-div h1 {
+    font-size: 1.8rem;
+  }
+}
+
+.workout-builder-active #startWorkoutBuilder {
+  display: none;
+}
+
 .workout-builder-active .workout-select-btn {
   display: inline-flex;
 }
@@ -179,11 +251,6 @@ html {
   font-size: 18px;
 }
 
-@media (min-width: 500px) { /* Adjust breakpoint as needed */
-  #filterInnerDiv {
-      display: block !important;
-  }
-}
 
 .landing-container {
   padding-top: 200px;

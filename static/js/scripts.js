@@ -89,6 +89,13 @@ async function displayWorkout(workoutDataPromise, landId, input=false){
 
 function createFilters(dataCols, colData, landId, search=true){
 	const land = document.getElementById(landId)
+	if (!land) {
+		return
+	}
+	const existingFilter = land.querySelector('#filterInnerDiv')
+	if (existingFilter) {
+		existingFilter.remove()
+	}
 	const filterDiv = document.createElement('div')
 	filterDiv.classList.add("collapse")
 	filterDiv.setAttribute('id', 'filterInnerDiv')
