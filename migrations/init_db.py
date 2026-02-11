@@ -97,6 +97,22 @@ CREATE TABLE IF NOT EXISTS workout_logs (
 );
 """
 
+init_workout_shares = """
+CREATE TABLE IF NOT EXISTS workout_shares (
+    id TEXT PRIMARY KEY,
+    sender_user_id TEXT,
+    receiver_user_id TEXT,
+    workout_snapshot TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TEXT,
+    responded_at TEXT,
+    accepted_workout_id TEXT,
+    FOREIGN KEY(sender_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY(receiver_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY(accepted_workout_id) REFERENCES workouts(id) ON DELETE SET NULL
+);
+"""
+
 # alter statements for core tables
 add_link_to_exercises = """
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS link TEXT;
