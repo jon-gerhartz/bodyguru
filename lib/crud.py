@@ -68,14 +68,20 @@ def get_workouts(user_id=''):
     return df
 
 
-def get_workout(lookup_val, by_name=False):
+def get_workout(lookup_val, by_name=False, user_id=''):
     if by_name == True:
         lookup_col = 'name'
     else:
         lookup_col = 'id'
     q_get_workout_formatted = q_get_workout.format(
-        lookup_col=lookup_col, lookup_val=lookup_val)
+        lookup_col=lookup_col, lookup_val=lookup_val, user_id=user_id)
     df = execute_pd(q_get_workout_formatted)
+    return df
+
+
+def get_workout_raw(workout_id):
+    q_get_workout_raw_formatted = q_get_workout_raw.format(workout_id=workout_id)
+    df = execute_pd(q_get_workout_raw_formatted)
     return df
 
 
@@ -195,6 +201,12 @@ def get_user_preferences(user_id):
     return df
 
 
+def get_user_by_email(email):
+    q_get_user_by_email_formatted = q_get_user_by_email.format(email=email)
+    df = execute_pd(q_get_user_by_email_formatted)
+    return df
+
+
 def update_user_preferences_mode(user_id, assistant_mode):
     execute_query(q_update_user_preferences_mode, user_id=user_id, assistant_mode=assistant_mode)
     return 'updated'
@@ -224,6 +236,65 @@ def get_assistant_messages(user_id, limit=50):
         user_id=user_id, limit=limit_val)
     df = execute_pd(q_get_assistant_messages_formatted)
     return df
+
+
+def get_user_exercise_ids(user_id):
+    q_get_user_exercise_ids_formatted = q_get_user_exercise_ids.format(user_id=user_id)
+    df = execute_pd(q_get_user_exercise_ids_formatted)
+    return df
+
+
+def get_exercise_ids_by_names(names):
+    if not names:
+        return pd.DataFrame(columns=["id", "name"])
+    stmt = text(q_get_exercise_ids_by_names).bindparams(bindparam("names", expanding=True))
+    with Session() as session:
+        result = session.execute(stmt, {"names": list(names)})
+        rows = result.fetchall()
+        return pd.DataFrame(rows, columns=["id", "name"])
+
+
+def add_user_exercise(user_id, exercise_id):
+    execute_query(q_create_user_exercise, user_id=user_id, exercise_id=exercise_id)
+    return 'done'
+
+
+def create_workout_share(sender_user_id, receiver_user_id, workout_snapshot, status='pending'):
+    share_id = str(uuid.uuid4())
+    created_at = datetime.now()
+    execute_query(
+        q_create_workout_share,
+        id=share_id,
+        sender_user_id=sender_user_id,
+        receiver_user_id=receiver_user_id,
+        workout_snapshot=workout_snapshot,
+        status=status,
+        created_at=created_at
+    )
+    return share_id
+
+
+def get_pending_workout_shares(user_id):
+    q_get_pending_workout_shares_formatted = q_get_pending_workout_shares.format(user_id=user_id)
+    df = execute_pd(q_get_pending_workout_shares_formatted)
+    return df
+
+
+def get_workout_share(share_id):
+    q_get_workout_share_formatted = q_get_workout_share.format(share_id=share_id)
+    df = execute_pd(q_get_workout_share_formatted)
+    return df
+
+
+def update_workout_share_status(share_id, status, accepted_workout_id=None):
+    execute_query(
+        q_update_workout_share_status,
+        id=share_id,
+        status=status,
+        responded_at=datetime.now(),
+        accepted_workout_id=accepted_workout_id
+    )
+    return 'updated'
 
 
 def get_assistant_messages_by_conversation(user_id, conversation_id, limit=50):

@@ -24,6 +24,9 @@
 							<h5 class="card-title" name="{{v['name']}}" parentId="{{v['name']}}" searchtag='resultData'>{{v['name']}}</h5>
 							<p class="card-text">{{v['description']}}</p>
 							<span class="badge text-bg-dark" tag='type' parentId="{{v['name']}}">{{v['type']}}</span>
+							{% if v['shared_from_name'] %}
+								<span class="badge text-bg-secondary">Shared from {{ v['shared_from_name'] }}</span>
+							{% endif %}
 							<br>
 							<br>
 							<a href="{{url_for('main.workout_details', workout_id=v['id'])}}" class="card-link">See Details</a>

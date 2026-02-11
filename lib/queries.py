@@ -99,9 +99,12 @@ SELECT
 	,a.description
 	,a.workout_data
     ,c.user_id is null as is_default_workout
+    ,u.name as shared_from_name
 FROM workouts a
 JOIN workout_types b on b.id = a.workout_type_id
 LEFT JOIN user_workouts c on c.workout_id = a.id
+LEFT JOIN workout_shares ws on ws.accepted_workout_id = a.id and ws.receiver_user_id = '{user_id}' and ws.status = 'accepted'
+LEFT JOIN users u on u.id = ws.sender_user_id
 WHERE (c.user_id = '{user_id}' or c.user_id is null) and deleted = 0;
 """
 
@@ -115,10 +118,24 @@ FROM (
 		,a.description
 		,a.workout_data
         ,c.user_id is null as is_default_workout
+        ,u.name as shared_from_name
 	FROM workouts a
 	JOIN workout_types b on b.id = a.workout_type_id
-    LEFT JOIN user_workouts c on c.workout_id = a.id) aa
+    LEFT JOIN user_workouts c on c.workout_id = a.id
+    LEFT JOIN workout_shares ws on ws.accepted_workout_id = a.id and ws.receiver_user_id = '{user_id}' and ws.status = 'accepted'
+    LEFT JOIN users u on u.id = ws.sender_user_id) aa
 WHERE {lookup_col} = '{lookup_val}'
+"""
+
+q_get_workout_raw = """
+SELECT
+    id,
+    name,
+    workout_type_id,
+    description,
+    workout_data
+FROM workouts
+WHERE id = '{workout_id}' and deleted = 0
 """
 
 q_create_workout = """
@@ -149,6 +166,64 @@ q_update_assistant_message_actions = """
 UPDATE assistant_messages
 SET actions_json = :actions_json,
     action_results_json = :action_results_json
+WHERE id = :id
+"""
+
+q_get_user_exercise_ids = """
+SELECT
+    exercise_id
+FROM user_exercises
+WHERE user_id = '{user_id}'
+"""
+
+q_get_exercise_ids_by_names = """
+SELECT
+    id,
+    name
+FROM exercises
+WHERE name IN :names
+  and deleted = 0
+"""
+
+q_create_workout_share = """
+INSERT INTO workout_shares (id, sender_user_id, receiver_user_id, workout_snapshot, status, created_at)
+VALUES (:id, :sender_user_id, :receiver_user_id, :workout_snapshot, :status, :created_at)
+"""
+
+q_get_pending_workout_shares = """
+SELECT
+    ws.id,
+    ws.workout_snapshot,
+    ws.created_at,
+    u.name as sender_name,
+    u.email as sender_email
+FROM workout_shares ws
+JOIN users u on u.id = ws.sender_user_id
+WHERE ws.receiver_user_id = '{user_id}'
+  AND ws.status = 'pending'
+ORDER BY ws.created_at DESC
+"""
+
+q_get_workout_share = """
+SELECT
+    id,
+    sender_user_id,
+    receiver_user_id,
+    workout_snapshot,
+    status,
+    created_at,
+    responded_at,
+    accepted_workout_id
+FROM workout_shares
+WHERE id = '{share_id}'
+LIMIT 1
+"""
+
+q_update_workout_share_status = """
+UPDATE workout_shares
+SET status = :status,
+    responded_at = :responded_at,
+    accepted_workout_id = :accepted_workout_id
 WHERE id = :id
 """
 
@@ -212,10 +287,20 @@ SELECT
 	a.id
 	,a.email
 	,a.created_at
+    ,a.name
     ,b.name as status
 FROM users a
 JOIN user_status b on b.id = a.status_id
 WHERE a.{lookup_col} = '{lookup_val}'
+"""
+
+q_get_user_by_email = """
+SELECT
+    id,
+    email,
+    name
+FROM users
+WHERE email = '{email}'
 """
 
 q_get_user_auth = """
