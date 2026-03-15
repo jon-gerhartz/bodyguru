@@ -3,6 +3,7 @@ from exp.landing import landing_data
 import json
 from lib.crud import *
 from lib.data_meta import *
+from lib.email import send_workout_invite_email
 from lib.reports import run_report_flow
 from utils.app_functions import auth_required
 from werkzeug.utils import secure_filename
@@ -180,7 +181,8 @@ def workouts():
     if request.method == 'GET':
         workouts_df = get_workouts(user_id=user_id)
         if 'shared_from_name' in workouts_df.columns:
-            workouts_df['shared_from_name'] = workouts_df['shared_from_name'].fillna('')
+            workouts_df['shared_from_name'] = workouts_df['shared_from_name'].fillna(
+                '')
         col_data = create_filer_col_dict(workout_filter_cols, workouts_df)
         return render_template('workouts.html', workouts=workouts_df, data_cols=workout_filter_cols, col_data=col_data)
     else:
@@ -334,23 +336,13 @@ def share_workout():
     workout_id = (request.form.get('workout_id') or '').strip()
     email = (request.form.get('email') or '').strip().lower()
     if not workout_id or not email:
-        flash("If that email exists, a share request was sent.")
-        return redirect(request.referrer or url_for('main.workouts'))
-
-    receiver_df = get_user_by_email(email)
-    if receiver_df.empty:
-        flash("If that email exists, a share request was sent.")
-        return redirect(request.referrer or url_for('main.workouts'))
-
-    receiver_id = receiver_df['id'].iloc[0]
-    if receiver_id == user_id:
-        flash("If that email exists, a share request was sent.")
+        flash("Workout shared, good for you!")
         return redirect(request.referrer or url_for('main.workouts'))
 
     workout_raw_df = get_workout_raw(workout_id)
     workout_display_df = get_workout(workout_id, user_id=user_id)
     if workout_raw_df.empty or workout_display_df.empty:
-        flash("If that email exists, a share request was sent.")
+        flash("Workout shared, good for you!")
         return redirect(request.referrer or url_for('main.workouts'))
 
     workout_snapshot = {
@@ -361,6 +353,35 @@ def share_workout():
         'workout_data': json.loads(workout_raw_df['workout_data'].iloc[0])
     }
 
+    receiver_df = get_user_by_email(email)
+    if receiver_df.empty:
+        sender_df = get_user(user_id)
+        sender_name = sender_df['name'].iloc[0] if not sender_df.empty and 'name' in sender_df.columns else ''
+        invite_token = create_workout_email_invite(
+            sender_user_id=user_id,
+            recipient_email=email,
+            workout_snapshot=json.dumps(workout_snapshot),
+            status='pending'
+        )
+        invite_snapshot = dict(workout_snapshot)
+        invite_snapshot['invite_url'] = url_for(
+            'main.workout_invite',
+            invite_token=invite_token,
+            _external=True
+        )
+        send_workout_invite_email(
+            email,
+            _get_first_name(sender_name),
+            invite_snapshot,
+        )
+        flash("workout shared, good for you!")
+        return redirect(request.referrer or url_for('main.workouts'))
+
+    receiver_id = receiver_df['id'].iloc[0]
+    if receiver_id == user_id:
+        flash("workout shared, good for you!")
+        return redirect(request.referrer or url_for('main.workouts'))
+
     create_workout_share(
         sender_user_id=user_id,
         receiver_user_id=receiver_id,
@@ -368,7 +389,7 @@ def share_workout():
         status='pending'
     )
 
-    flash("If that email exists, a share request was sent.")
+    flash("workout shared, good for you!")
     return redirect(request.referrer or url_for('main.workouts'))
 
 
@@ -416,7 +437,8 @@ def accept_workout_share(share_id):
         snapshot = {}
 
     workout_data = snapshot.get('workout_data') or {}
-    workout_data_json = json.dumps(workout_data) if isinstance(workout_data, dict) else snapshot.get('workout_data', '{}')
+    workout_data_json = json.dumps(workout_data) if isinstance(
+        workout_data, dict) else snapshot.get('workout_data', '{}')
     new_workout_id = create_workout(
         snapshot.get('name') or 'Shared Workout',
         snapshot.get('workout_type_id'),
@@ -425,18 +447,21 @@ def accept_workout_share(share_id):
         user_id=user_id
     )
 
-    exercise_names = _extract_exercise_names_from_workout_data(workout_data if isinstance(workout_data, dict) else {})
+    exercise_names = _extract_exercise_names_from_workout_data(
+        workout_data if isinstance(workout_data, dict) else {})
     if exercise_names:
         exercise_df = get_exercise_ids_by_names(exercise_names)
         receiver_exercise_df = get_user_exercise_ids(user_id)
-        existing_ids = set(receiver_exercise_df['exercise_id'].tolist()) if not receiver_exercise_df.empty else set()
+        existing_ids = set(receiver_exercise_df['exercise_id'].tolist(
+        )) if not receiver_exercise_df.empty else set()
         for _, row in exercise_df.iterrows():
             exercise_id = row['id']
             if exercise_id not in existing_ids:
                 add_user_exercise(user_id, exercise_id)
                 existing_ids.add(exercise_id)
 
-    update_workout_share_status(share_id, 'accepted', accepted_workout_id=new_workout_id)
+    update_workout_share_status(
+        share_id, 'accepted', accepted_workout_id=new_workout_id)
     flash("Workout added to your list.")
     return redirect(url_for('main.workouts'))
 
@@ -456,6 +481,41 @@ def decline_workout_share(share_id):
     update_workout_share_status(share_id, 'declined', accepted_workout_id=None)
     flash("Share request declined.")
     return redirect(url_for('main.notifications'))
+
+
+@main.route('/workout-invite/<invite_token>', methods=['GET'])
+def workout_invite(invite_token):
+    invite_df = get_workout_email_invite_by_token(invite_token)
+    if invite_df.empty or invite_df['status'].iloc[0] != 'pending':
+        flash("This workout invite is no longer available.")
+        return redirect(url_for('main.index'))
+    invite = invite_df.iloc[0]
+    try:
+        snapshot = json.loads(invite['workout_snapshot'] or '{}')
+    except json.JSONDecodeError:
+        snapshot = {}
+    sender_df = get_user(invite['sender_user_id']) if invite.get('sender_user_id') else None
+    sender_name = sender_df['name'].iloc[0] if sender_df is not None and not sender_df.empty and 'name' in sender_df.columns else 'A friend'
+    workout_data = snapshot.get('workout_data') or {}
+    set_count = len(workout_data) if isinstance(workout_data, dict) else 0
+    move_count = 0
+    if isinstance(workout_data, dict):
+        for exercises in workout_data.values():
+            if isinstance(exercises, list):
+                move_count += len(exercises)
+    session['pending_workout_invite_token'] = invite_token
+    return render_template(
+        'workout_invite.html',
+        invite_token=invite_token,
+        sender_name=sender_name,
+        sender_first_name=_get_first_name(sender_name),
+        workout_name=snapshot.get('name') or 'Shared workout',
+        workout_type=snapshot.get('type_name') or '',
+        workout_description=snapshot.get('description') or '',
+        set_count=set_count,
+        move_count=move_count,
+        recipient_email=invite['recipient_email']
+    )
 
 
 @main.route('/log', methods=['GET', 'POST'])
@@ -510,3 +570,9 @@ def _extract_exercise_names_from_workout_data(workout_data):
             if exercise_name not in exercise_names:
                 exercise_names.append(exercise_name)
     return exercise_names
+
+
+def _get_first_name(full_name):
+    if not full_name:
+        return "Your friend"
+    return str(full_name).strip().split()[0]

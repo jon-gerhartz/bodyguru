@@ -203,6 +203,35 @@ INSERT INTO workout_shares (id, sender_user_id, receiver_user_id, workout_snapsh
 VALUES (:id, :sender_user_id, :receiver_user_id, :workout_snapshot, :status, :created_at)
 """
 
+q_create_workout_email_invite = """
+INSERT INTO workout_email_invites (id, sender_user_id, recipient_email, invite_token, workout_snapshot, status, created_at)
+VALUES (:id, :sender_user_id, :recipient_email, :invite_token, :workout_snapshot, :status, :created_at)
+"""
+
+q_get_workout_email_invite_by_token = """
+SELECT
+    id,
+    sender_user_id,
+    recipient_email,
+    invite_token,
+    workout_snapshot,
+    status,
+    created_at,
+    accepted_at,
+    accepted_user_id
+FROM workout_email_invites
+WHERE invite_token = '{invite_token}'
+LIMIT 1
+"""
+
+q_accept_workout_email_invite = """
+UPDATE workout_email_invites
+SET status = :status,
+    accepted_at = :accepted_at,
+    accepted_user_id = :accepted_user_id
+WHERE id = :id
+"""
+
 q_get_pending_workout_shares = """
 SELECT
     ws.id,

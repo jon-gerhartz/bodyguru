@@ -1,10 +1,71 @@
-from lib.crud import get_user_auth, create_user, update_pass, create_pass_reset_request, get_pass_reset_user, get_user_preferences
+from lib.crud import get_user_auth, create_user, update_pass, create_pass_reset_request, get_pass_reset_user, get_user_preferences, get_workout_email_invite_by_token, accept_workout_email_invite, create_workout, get_exercise_ids_by_names, get_user_exercise_ids, add_user_exercise
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from utils.app_functions import generate_password_hash, check_password
 from lib.email import send_reset_email
+import json
 import pandas as pd
 
 auth = Blueprint('auth', __name__)
+
+
+def _extract_exercise_names_from_workout_data(workout_data):
+    exercise_names = []
+    if not isinstance(workout_data, dict):
+        return exercise_names
+    for set_key in workout_data:
+        for exercise_name in workout_data.get(set_key, []):
+            if exercise_name not in exercise_names:
+                exercise_names.append(exercise_name)
+    return exercise_names
+
+
+def _consume_pending_workout_invite(user_id, email, invite_token=None):
+    if invite_token:
+        session.pop('pending_workout_invite_token', None)
+    else:
+        invite_token = session.pop('pending_workout_invite_token', None)
+    if not invite_token:
+        return None
+
+    invite_df = get_workout_email_invite_by_token(invite_token)
+    if invite_df.empty:
+        return None
+
+    invite = invite_df.iloc[0]
+    if invite['status'] != 'pending':
+        return None
+    if str(invite['recipient_email']).strip().lower() != str(email).strip().lower():
+        flash('This workout invite was sent to a different email address.', 'error')
+        return None
+
+    try:
+        snapshot = json.loads(invite['workout_snapshot'] or '{}')
+    except json.JSONDecodeError:
+        snapshot = {}
+
+    workout_data = snapshot.get('workout_data') or {}
+    workout_data_json = json.dumps(workout_data) if isinstance(workout_data, dict) else '{}'
+    workout_id = create_workout(
+        snapshot.get('name') or 'Shared Workout',
+        snapshot.get('workout_type_id'),
+        snapshot.get('description') or '',
+        workout_data_json,
+        user_id=user_id
+    )
+
+    exercise_names = _extract_exercise_names_from_workout_data(workout_data if isinstance(workout_data, dict) else {})
+    if exercise_names:
+        exercise_df = get_exercise_ids_by_names(exercise_names)
+        receiver_exercise_df = get_user_exercise_ids(user_id)
+        existing_ids = set(receiver_exercise_df['exercise_id'].tolist()) if not receiver_exercise_df.empty else set()
+        for _, row in exercise_df.iterrows():
+            exercise_id = row['id']
+            if exercise_id not in existing_ids:
+                add_user_exercise(user_id, exercise_id)
+                existing_ids.add(exercise_id)
+
+    accept_workout_email_invite(invite['id'], user_id)
+    return workout_id
 
 
 @auth.route('/login', methods=['GET', 'POST'])
@@ -38,6 +99,7 @@ def signup():
     email = request.form.get('email')
     password = request.form.get('password')
     name = request.form.get('name')
+    invite_token = request.form.get('invite_token')
     hashed_password = generate_password_hash(password)
     try:
         if password:
@@ -55,6 +117,10 @@ def signup():
     user_preferences = get_user_preferences(user_id)
     show_all_workouts = user_preferences['show_all_workouts'][0]
     session['show_all_workouts'] = str(show_all_workouts)
+    invited_workout_id = _consume_pending_workout_invite(user_id, email, invite_token=invite_token)
+    if invited_workout_id:
+        flash('Workout added to your account.')
+        return redirect(url_for('main.workout_details', workout_id=invited_workout_id))
     return redirect(url_for('main.dashboard', user_id=user_id))
 
 

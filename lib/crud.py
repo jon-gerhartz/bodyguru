@@ -233,6 +233,41 @@ def create_workout_share(sender_user_id, receiver_user_id, workout_snapshot, sta
     return share_id
 
 
+def create_workout_email_invite(sender_user_id, recipient_email, workout_snapshot, status='pending'):
+    invite_id = str(uuid.uuid4())
+    invite_token = str(uuid.uuid4())
+    created_at = datetime.now()
+    execute_query(
+        q_create_workout_email_invite,
+        id=invite_id,
+        sender_user_id=sender_user_id,
+        recipient_email=recipient_email,
+        invite_token=invite_token,
+        workout_snapshot=workout_snapshot,
+        status=status,
+        created_at=created_at
+    )
+    return invite_token
+
+
+def get_workout_email_invite_by_token(invite_token):
+    q_get_workout_email_invite_by_token_formatted = q_get_workout_email_invite_by_token.format(
+        invite_token=invite_token)
+    df = execute_pd(q_get_workout_email_invite_by_token_formatted)
+    return df
+
+
+def accept_workout_email_invite(invite_id, accepted_user_id):
+    execute_query(
+        q_accept_workout_email_invite,
+        id=invite_id,
+        status='accepted',
+        accepted_at=datetime.now(),
+        accepted_user_id=accepted_user_id
+    )
+    return 'updated'
+
+
 def get_pending_workout_shares(user_id):
     q_get_pending_workout_shares_formatted = q_get_pending_workout_shares.format(user_id=user_id)
     df = execute_pd(q_get_pending_workout_shares_formatted)

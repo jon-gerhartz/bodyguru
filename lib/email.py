@@ -8,6 +8,7 @@ load_dotenv()
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL") or os.getenv("FROM_EMAIL")
 BASE_DOMAIN = os.getenv("BASE_DOMAIN")
+WORKOUT_INVITE_TEMPLATE_ID = os.getenv("RESEND_WORKOUT_INVITE_TEMPLATE_ID")
 
 resend.api_key = RESEND_API_KEY
 
@@ -20,6 +21,20 @@ def send_email(to_email, subject, html, text):
         "html": html,
         "text": text,
     }
+    return resend.Emails.send(params)
+
+
+def send_template_email(to_email, template_id, variables, subject=None):
+    params = {
+        "from": FROM_EMAIL,
+        "to": [to_email],
+        "template": {
+            "id": template_id,
+            "variables": variables,
+        },
+    }
+    if subject:
+        params["subject"] = subject
     return resend.Emails.send(params)
 
 
@@ -39,3 +54,21 @@ def send_reset_email(to_email):
     )
     send_email(to_email, subject, html, text)
     return url_var
+
+
+def send_workout_invite_email(to_email, friend_first_name, workout_snapshot):
+    if not WORKOUT_INVITE_TEMPLATE_ID:
+        raise ValueError("RESEND_WORKOUT_INVITE_TEMPLATE_ID is not configured.")
+    invite_url = workout_snapshot.get("invite_url", "")
+    variables = {
+        "friend_first_name": friend_first_name,
+        "invite_url": invite_url,
+        "workout_name": workout_snapshot.get("name", ""),
+    }
+    subject = f"{friend_first_name} shared a workout with you"
+    return send_template_email(
+        to_email,
+        WORKOUT_INVITE_TEMPLATE_ID,
+        variables,
+        subject=subject,
+    )
