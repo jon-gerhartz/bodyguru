@@ -1,11 +1,15 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container">
-  <h1>Notifications</h1>
-  <p>Review workout shares from friends.</p>
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Notifications</h1>
+      <p class="page-subtitle mb-0">Review workout shares from friends.</p>
+    </div>
+  </div>
   {% if shares and shares|length > 0 %}
     {% for share in shares %}
-      <div class="card mb-3" style="background-color: #f5f5f5;border:none;">
+      <div class="card mb-3 list-card">
         <div class="card-body">
           <h5 class="card-title">{{ share.workout_name }}</h5>
           <p class="card-text">{{ share.description }}</p>
@@ -25,7 +29,7 @@
       </div>
     {% endfor %}
   {% else %}
-    <div class="card" style="background-color: #f5f5f5;border:none;">
+    <div class="card list-card">
       <div class="card-body">
         <p class="mb-0">No new workout shares.</p>
       </div>

@@ -112,16 +112,6 @@ def update_workout_meta(workout_id, name, description):
     return 'updated'
 
 
-def update_assistant_message_actions(message_id, actions_json=None, action_results_json=None):
-    execute_query(
-        q_update_assistant_message_actions,
-        id=message_id,
-        actions_json=actions_json,
-        action_results_json=action_results_json
-    )
-    return 'updated'
-
-
 # crud functions for workout_logs object
 def get_workout_logs(user_id):
     q_get_workout_logs_all_formatted = q_get_workout_logs_all.format(
@@ -136,10 +126,12 @@ def get_workout_log(log_id):
     return df
 
 
-def create_workout_log(workout_id, user_id, feedback_data, past_date=''):
+def create_workout_log(workout_id, user_id, feedback_data, past_date='', completed_at_value='__auto__'):
     log_id = str(uuid.uuid4())
     created_at = datetime.now()
-    if past_date == '':
+    if completed_at_value != '__auto__':
+        completed_at = completed_at_value
+    elif past_date == '':
         completed_at = datetime.now()
     else:
 
@@ -147,7 +139,20 @@ def create_workout_log(workout_id, user_id, feedback_data, past_date=''):
         completed_at = dt_obj.strftime('%Y-%m-%dT%H:%M:%S.%f')
     execute_query(q_create_workout_log, id=log_id, workout_id=workout_id,
                   user_id=user_id, feedback_data=feedback_data, created_at=created_at, completed_at=completed_at)
-    return 'done'
+    return log_id
+
+
+def get_workout_logs_for_workout_user(user_id, workout_id, limit=10):
+    limit_val = int(limit) if str(limit).isdigit() else 10
+    q_get_workout_logs_formatted = q_get_workout_logs_for_workout_user.format(
+        user_id=user_id, workout_id=workout_id, limit=limit_val)
+    df = execute_pd(q_get_workout_logs_formatted)
+    return df
+
+
+def update_workout_log(log_id, feedback_data, completed_at=None):
+    execute_query(q_update_workout_log, id=log_id, feedback_data=feedback_data, completed_at=completed_at)
+    return 'updated'
 
 
 def delete_workout_log_item(log_id):
@@ -166,7 +171,7 @@ def create_user(email, name, password_hash, status_id=1):
                   name=name, status_id=status_id)
 
     execute_query(q_set_user_preferences, user_id=user_id,
-                  show_all_workouts=False, assistant_mode='approval')
+                  show_all_workouts=False)
 
     return user_id
 
@@ -207,37 +212,6 @@ def get_user_by_email(email):
     return df
 
 
-def update_user_preferences_mode(user_id, assistant_mode):
-    execute_query(q_update_user_preferences_mode, user_id=user_id, assistant_mode=assistant_mode)
-    return 'updated'
-
-
-def create_assistant_message(user_id, role, content, mode='approval', actions_json=None, action_results_json=None, conversation_id=None):
-    message_id = str(uuid.uuid4())
-    created_at = datetime.now()
-    execute_query(
-        q_create_assistant_message,
-        id=message_id,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        role=role,
-        content=content,
-        mode=mode,
-        actions_json=actions_json,
-        action_results_json=action_results_json,
-        created_at=created_at,
-    )
-    return message_id
-
-
-def get_assistant_messages(user_id, limit=50):
-    limit_val = int(limit) if str(limit).isdigit() else 50
-    q_get_assistant_messages_formatted = q_get_assistant_messages.format(
-        user_id=user_id, limit=limit_val)
-    df = execute_pd(q_get_assistant_messages_formatted)
-    return df
-
-
 def get_user_exercise_ids(user_id):
     q_get_user_exercise_ids_formatted = q_get_user_exercise_ids.format(user_id=user_id)
     df = execute_pd(q_get_user_exercise_ids_formatted)
@@ -274,6 +248,41 @@ def create_workout_share(sender_user_id, receiver_user_id, workout_snapshot, sta
     return share_id
 
 
+def create_workout_email_invite(sender_user_id, recipient_email, workout_snapshot, status='pending'):
+    invite_id = str(uuid.uuid4())
+    invite_token = str(uuid.uuid4())
+    created_at = datetime.now()
+    execute_query(
+        q_create_workout_email_invite,
+        id=invite_id,
+        sender_user_id=sender_user_id,
+        recipient_email=recipient_email,
+        invite_token=invite_token,
+        workout_snapshot=workout_snapshot,
+        status=status,
+        created_at=created_at
+    )
+    return invite_token
+
+
+def get_workout_email_invite_by_token(invite_token):
+    q_get_workout_email_invite_by_token_formatted = q_get_workout_email_invite_by_token.format(
+        invite_token=invite_token)
+    df = execute_pd(q_get_workout_email_invite_by_token_formatted)
+    return df
+
+
+def accept_workout_email_invite(invite_id, accepted_user_id):
+    execute_query(
+        q_accept_workout_email_invite,
+        id=invite_id,
+        status='accepted',
+        accepted_at=datetime.now(),
+        accepted_user_id=accepted_user_id
+    )
+    return 'updated'
+
+
 def get_pending_workout_shares(user_id):
     q_get_pending_workout_shares_formatted = q_get_pending_workout_shares.format(user_id=user_id)
     df = execute_pd(q_get_pending_workout_shares_formatted)
@@ -293,75 +302,6 @@ def update_workout_share_status(share_id, status, accepted_workout_id=None):
         status=status,
         responded_at=datetime.now(),
         accepted_workout_id=accepted_workout_id
-    )
-    return 'updated'
-
-
-def get_assistant_messages_by_conversation(user_id, conversation_id, limit=50):
-    limit_val = int(limit) if str(limit).isdigit() else 50
-    q_get_assistant_messages_formatted = q_get_assistant_messages_by_conversation.format(
-        user_id=user_id, conversation_id=conversation_id, limit=limit_val)
-    df = execute_pd(q_get_assistant_messages_formatted)
-    return df
-
-
-def create_assistant_conversation(user_id, title='New chat'):
-    convo_id = str(uuid.uuid4())
-    created_at = datetime.now()
-    execute_query(
-        q_create_assistant_conversation,
-        id=convo_id,
-        user_id=user_id,
-        title=title,
-        created_at=created_at,
-        updated_at=created_at
-    )
-    return convo_id
-
-
-def get_assistant_conversations(user_id):
-    q_get_assistant_conversations_formatted = q_get_assistant_conversations.format(user_id=user_id)
-    df = execute_pd(q_get_assistant_conversations_formatted)
-    return df
-
-
-def get_latest_assistant_conversation(user_id):
-    q_get_latest_assistant_conversation_formatted = q_get_latest_assistant_conversation.format(user_id=user_id)
-    df = execute_pd(q_get_latest_assistant_conversation_formatted)
-    return df
-
-
-def get_assistant_conversation(user_id, conversation_id):
-    q_get_assistant_conversation_formatted = q_get_assistant_conversation.format(
-        user_id=user_id, conversation_id=conversation_id)
-    df = execute_pd(q_get_assistant_conversation_formatted)
-    return df
-
-
-def update_assistant_conversation_title(conversation_id, title):
-    execute_query(
-        q_update_assistant_conversation_title,
-        id=conversation_id,
-        title=title,
-        updated_at=datetime.now()
-    )
-    return 'updated'
-
-
-def touch_assistant_conversation(conversation_id):
-    execute_query(
-        q_touch_assistant_conversation,
-        id=conversation_id,
-        updated_at=datetime.now()
-    )
-    return 'updated'
-
-
-def migrate_assistant_messages_to_conversation(user_id, conversation_id):
-    execute_query(
-        q_update_assistant_messages_conversation_for_user,
-        user_id=user_id,
-        conversation_id=conversation_id
     )
     return 'updated'
 
@@ -390,12 +330,12 @@ def get_workout_types():
 # workout exercise lookup
 def get_exercises_by_names(names):
     if not names:
-        return pd.DataFrame(columns=["name", "video_slug"])
+        return pd.DataFrame(columns=["id", "name", "video_slug"])
     stmt = text(q_get_exercises_by_names).bindparams(bindparam("names", expanding=True))
     with Session() as session:
         result = session.execute(stmt, {"names": list(names)})
         rows = result.fetchall()
-        return pd.DataFrame(rows, columns=["name", "video_slug"])
+        return pd.DataFrame(rows, columns=["id", "name", "video_slug"])
 
 # crud functions for password reset
 

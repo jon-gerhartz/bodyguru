@@ -3,11 +3,129 @@
 <div class="container-fluid">
 	<div class='row top-div'>
 		<div class='col'>
-			<h1>{{workout['name'][0]}}</h1>
-			<p>{{workout['description'][0]}}</p>
+			<h1 class="page-title">{{workout['name'][0]}}</h1>
+			<p class="page-subtitle">{{workout['description'][0]}}</p>
 			{% if workout['shared_from_name'][0] %}
 				<span class="badge text-bg-secondary">Shared from {{ workout['shared_from_name'][0] }}</span>
 			{% endif %}
+		</div>
+		<div class="col-md-auto mt-3 mt-md-0">
+				<div class="d-flex gap-2 justify-content-md-end">
+					<button type="button" class="btn btn-primary" id="startWorkoutBtn">
+						{{ 'Resume Workout' if current_session else 'Start Workout' }}
+					</button>
+					<button type="button" class="btn btn-outline-secondary d-none" id="pauseWorkoutBtn">Pause</button>
+					<button type="button" class="btn btn-success d-none" id="finishWorkoutBtn">Finish Workout</button>
+					<button type="button" class="btn btn-outline-danger d-none" id="discardWorkoutBtn">Discard</button>
+				</div>
+			</div>
+		</div>
+	<div class="row mt-3 {% if not current_session %}d-none{% endif %}" id="workoutSessionRow">
+		<div class="col">
+			<div class="card border-primary shadow-sm">
+				<div class="card-body">
+					<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+						<div>
+							<div class="text-muted text-uppercase small">Workout Session</div>
+							<h4 class="mb-0" id="sessionStatusText">{{ current_session.feedback_data.status.replace('_', ' ')|title if current_session else 'Ready' }}</h4>
+						</div>
+						<div class="text-end">
+							<div class="text-muted small">Active Time</div>
+							<div class="display-6 mb-0" id="sessionElapsed">00:00</div>
+						</div>
+					</div>
+					<ul class="nav nav-pills mb-3" id="sessionTabNav">
+						<li class="nav-item">
+							<button class="nav-link active" type="button" data-session-tab="log">Log</button>
+						</li>
+						<li class="nav-item">
+							<button class="nav-link" type="button" data-session-tab="timer">Timer</button>
+						</li>
+						<li class="nav-item ms-auto d-none" id="reviewTabNav">
+							<button class="nav-link" type="button" data-session-tab="review">Review</button>
+						</li>
+					</ul>
+					<div data-session-panel="log">
+						<div class="mb-3">
+							<label class="form-label">Workout notes</label>
+							<textarea class="form-control" id="sessionNotes" rows="3" placeholder="Anything worth remembering?"></textarea>
+						</div>
+						<div>
+							<div class="d-flex justify-content-between align-items-center mb-2">
+								<label class="form-label mb-0">Exercises completed</label>
+								<span class="text-muted small" id="completedCountText">0 selected</span>
+							</div>
+							<p class="text-muted small mb-2">All exercises are included by default. Remove any that you skipped.</p>
+							<div class="d-flex gap-2 mb-2">
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="includeAllExercisesBtn">Include All</button>
+								<button type="button" class="btn btn-sm btn-outline-secondary" id="clearExercisesBtn">Clear All</button>
+							</div>
+							<div class="list-group session-exercise-list" id="sessionExerciseList" style="max-height: 260px; overflow-y: auto;"></div>
+						</div>
+					</div>
+					<div class="d-none" data-session-panel="timer">
+						<div class="mb-3">
+							<div class="btn-group" role="group" aria-label="Timer mode">
+								<button type="button" class="btn btn-outline-primary active" data-timer-mode="stopwatch">Stopwatch</button>
+								<button type="button" class="btn btn-outline-primary" data-timer-mode="tabata">Tabata</button>
+							</div>
+						</div>
+						<div class="border rounded-4 p-4 mb-3 text-center bg-light">
+							<div class="text-uppercase text-muted small mb-2" id="timerStateLabel">Stopwatch</div>
+							<div class="display-4 mb-0" id="timerDisplay">00:00</div>
+						</div>
+						<div id="tabataConfig" class="d-none">
+							<div class="row g-3 align-items-end">
+								<div class="col-sm-4">
+									<label class="form-label">Rounds</label>
+									<input type="number" min="1" class="form-control" id="tabataRounds" value="5">
+								</div>
+								<div class="col-sm-4">
+									<label class="form-label">Work seconds</label>
+									<input type="number" min="1" class="form-control" id="tabataWorkSeconds" value="30">
+								</div>
+								<div class="col-sm-4">
+									<label class="form-label">Rest seconds</label>
+									<input type="number" min="1" class="form-control" id="tabataRestSeconds" value="30">
+								</div>
+							</div>
+							<div class="mt-3 d-flex gap-2">
+								<button type="button" class="btn btn-primary" id="tabataStartBtn">Start Tabata</button>
+								<button type="button" class="btn btn-outline-secondary" id="tabataResetBtn">Reset</button>
+							</div>
+							<div class="mt-3">
+								<div class="text-muted small mb-1">Completed tabatas this session</div>
+								<div class="list-group" id="tabataHistory"></div>
+							</div>
+						</div>
+					</div>
+					<div class="d-none" data-session-panel="review">
+						<h5 class="mb-3">Review workout log</h5>
+						<div class="list-group">
+							<div class="list-group-item">
+								<div class="text-muted small">Duration</div>
+								<div id="reviewDuration">00:00</div>
+							</div>
+							<div class="list-group-item">
+								<div class="text-muted small">Exercises completed</div>
+								<div id="reviewExercises">None yet</div>
+							</div>
+							<div class="list-group-item">
+								<div class="text-muted small">Notes</div>
+								<div id="reviewNotes">No notes</div>
+							</div>
+							<div class="list-group-item">
+								<div class="text-muted small">Tabatas completed</div>
+								<div id="reviewTabatas">0</div>
+							</div>
+						</div>
+						<div class="mt-3 d-flex gap-2">
+							<button type="button" class="btn btn-outline-secondary" id="backToLogBtn">Back</button>
+							<button type="button" class="btn btn-success" id="confirmFinishBtn">Save Workout Log</button>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 	<br>
@@ -40,6 +158,7 @@
 								{% endif %}
 								<div class="exercise-row badge rounded-pill text-bg-light border d-inline-flex align-items-center gap-2 py-2 px-3"
 									data-exercise-name="{{ exercise }}"
+									data-exercise-id="{{ exercise_meta.get(exercise, {}).get('id', '') }}"
 									data-video-slug="{{ video_slug or '' }}"
 									data-video-url="{{ url_for('main.video', filename=video_slug) if video_slug else '' }}"
 									data-video-type="{{ video_type }}"
@@ -118,7 +237,7 @@
           <div class="mb-3">
             <label for="shareWorkoutEmail" class="form-label">Friend's email</label>
             <input type="email" class="form-control" id="shareWorkoutEmail" name="email" placeholder="name@example.com" required>
-            <div class="form-text">We only send a share if the exact email exists.</div>
+            <div class="form-text">If the user does not exist, we will send them an invite.</div>
           </div>
         </div>
         <div class="modal-footer">
@@ -227,6 +346,569 @@
 {% endblock %}
 {% block scripts %}
 <script>
+	const initialSession = {{ current_session | tojson | safe if current_session else 'null' }};
+	const workoutId = {{ workout['id'][0] | tojson }};
+	const sessionRow = document.getElementById('workoutSessionRow');
+	const startWorkoutBtn = document.getElementById('startWorkoutBtn');
+		const pauseWorkoutBtn = document.getElementById('pauseWorkoutBtn');
+		const finishWorkoutBtn = document.getElementById('finishWorkoutBtn');
+		const discardWorkoutBtn = document.getElementById('discardWorkoutBtn');
+		const sessionStatusText = document.getElementById('sessionStatusText');
+	const sessionElapsed = document.getElementById('sessionElapsed');
+	const sessionNotes = document.getElementById('sessionNotes');
+	const sessionExerciseList = document.getElementById('sessionExerciseList');
+	const completedCountText = document.getElementById('completedCountText');
+	const includeAllExercisesBtn = document.getElementById('includeAllExercisesBtn');
+	const clearExercisesBtn = document.getElementById('clearExercisesBtn');
+	const timerDisplay = document.getElementById('timerDisplay');
+	const timerStateLabel = document.getElementById('timerStateLabel');
+	const reviewTabNav = document.getElementById('reviewTabNav');
+	const reviewDuration = document.getElementById('reviewDuration');
+	const reviewExercises = document.getElementById('reviewExercises');
+	const reviewNotes = document.getElementById('reviewNotes');
+	const reviewTabatas = document.getElementById('reviewTabatas');
+	const tabataConfig = document.getElementById('tabataConfig');
+	const tabataRounds = document.getElementById('tabataRounds');
+	const tabataWorkSeconds = document.getElementById('tabataWorkSeconds');
+	const tabataRestSeconds = document.getElementById('tabataRestSeconds');
+	const tabataStartBtn = document.getElementById('tabataStartBtn');
+	const tabataResetBtn = document.getElementById('tabataResetBtn');
+	const tabataHistory = document.getElementById('tabataHistory');
+	const backToLogBtn = document.getElementById('backToLogBtn');
+	const confirmFinishBtn = document.getElementById('confirmFinishBtn');
+	const sessionPanels = Array.from(document.querySelectorAll('[data-session-panel]'));
+	const sessionTabButtons = Array.from(document.querySelectorAll('[data-session-tab]'));
+	const timerModeButtons = Array.from(document.querySelectorAll('[data-timer-mode]'));
+	const exerciseRowsForSession = Array.from(document.querySelectorAll('.exercise-row'));
+	let workoutSession = initialSession ? initialSession : null;
+	let activeTickInterval = null;
+	let autosaveTimeout = null;
+	let timerMode = 'stopwatch';
+	let tabataState = {
+		running: false,
+		phase: 'ready',
+		timeLeft: 0,
+		intervalId: null,
+		currentRound: 0,
+		config: null
+	};
+
+	function formatDuration(totalSeconds) {
+		const secs = Math.max(0, parseInt(totalSeconds || 0, 10));
+		const hours = Math.floor(secs / 3600);
+		const minutes = Math.floor((secs % 3600) / 60);
+		const seconds = secs % 60;
+		if (hours > 0) {
+			return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+		}
+		return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+	}
+
+	function parseSessionTimestamp(value) {
+		if (!value) {
+			return null;
+		}
+		const raw = String(value);
+		const normalized = /z$|[+-]\d{2}:\d{2}$/i.test(raw) ? raw : `${raw}Z`;
+		const parsed = new Date(normalized);
+		if (Number.isNaN(parsed.getTime())) {
+			return null;
+		}
+		return parsed;
+	}
+
+	function beep(duration = 0.08, frequency = 880) {
+		const Ctx = window.AudioContext || window.webkitAudioContext;
+		if (!Ctx) {
+			return;
+		}
+		if (!window._workoutAudioCtx) {
+			window._workoutAudioCtx = new Ctx();
+		}
+		const ctx = window._workoutAudioCtx;
+		const oscillator = ctx.createOscillator();
+		const gainNode = ctx.createGain();
+		oscillator.type = 'sine';
+		oscillator.frequency.value = frequency;
+		gainNode.gain.value = 0.03;
+		oscillator.connect(gainNode);
+		gainNode.connect(ctx.destination);
+		oscillator.start();
+		oscillator.stop(ctx.currentTime + duration);
+	}
+
+	function ensureSessionPayload() {
+		if (!workoutSession) {
+			return null;
+		}
+		const payload = workoutSession.feedback_data;
+		payload.completed_exercise_ids = Array.isArray(payload.completed_exercise_ids) ? payload.completed_exercise_ids.map(String) : [];
+		payload.tabatas = Array.isArray(payload.tabatas) ? payload.tabatas : [];
+		payload.notes = payload.notes || '';
+		return payload;
+	}
+
+	function getActiveElapsedSeconds() {
+		const payload = ensureSessionPayload();
+		if (!payload) {
+			return 0;
+		}
+		let total = parseInt(payload.active_duration_seconds || 0, 10);
+		if (payload.status === 'in_progress' && payload.last_resumed_at) {
+			const resumedAt = parseSessionTimestamp(payload.last_resumed_at);
+			if (resumedAt) {
+				total += Math.max(0, Math.floor((Date.now() - resumedAt.getTime()) / 1000));
+			}
+		}
+		return total;
+	}
+
+	function updateSessionControls() {
+		const payload = ensureSessionPayload();
+		const hasSession = !!payload;
+		sessionRow.classList.toggle('d-none', !hasSession);
+			if (!hasSession) {
+				startWorkoutBtn.textContent = 'Start Workout';
+				pauseWorkoutBtn.classList.add('d-none');
+				finishWorkoutBtn.classList.add('d-none');
+				discardWorkoutBtn.classList.add('d-none');
+				return;
+			}
+			const isRunning = payload.status === 'in_progress';
+			startWorkoutBtn.textContent = isRunning ? 'Workout Running' : 'Resume Workout';
+			startWorkoutBtn.disabled = isRunning;
+			pauseWorkoutBtn.classList.toggle('d-none', !isRunning);
+			finishWorkoutBtn.classList.remove('d-none');
+			discardWorkoutBtn.classList.remove('d-none');
+		sessionStatusText.textContent = payload.status.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
+		sessionElapsed.textContent = formatDuration(getActiveElapsedSeconds());
+		sessionNotes.value = payload.notes || '';
+		updateCompletedExerciseSummary();
+		renderTabataHistory();
+	}
+
+	function setActivePanel(panelName) {
+		sessionPanels.forEach(panel => {
+			panel.classList.toggle('d-none', panel.getAttribute('data-session-panel') !== panelName);
+		});
+		sessionTabButtons.forEach(btn => {
+			btn.classList.toggle('active', btn.getAttribute('data-session-tab') === panelName);
+		});
+	}
+
+	function renderExerciseSelections() {
+		const payload = ensureSessionPayload();
+		const completedIds = new Set(payload ? payload.completed_exercise_ids : []);
+		sessionExerciseList.innerHTML = '';
+		const seen = new Set();
+		exerciseRowsForSession.forEach(row => {
+			const exerciseId = row.getAttribute('data-exercise-id');
+			const exerciseName = row.getAttribute('data-exercise-name');
+			if (!exerciseId || seen.has(exerciseId)) {
+				return;
+			}
+			seen.add(exerciseId);
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${completedIds.has(exerciseId) ? 'active' : ''}`;
+			button.innerHTML = `
+				<span>${exerciseName}</span>
+				<span class="badge ${completedIds.has(exerciseId) ? 'bg-light text-dark' : 'bg-secondary'}">${completedIds.has(exerciseId) ? 'Included' : 'Excluded'}</span>
+			`;
+			button.dataset.exerciseId = exerciseId;
+			button.addEventListener('click', () => toggleExerciseCompletion(exerciseId));
+			sessionExerciseList.appendChild(button);
+		});
+	}
+
+	function updateCompletedExerciseSummary() {
+		const payload = ensureSessionPayload();
+		const count = payload ? payload.completed_exercise_ids.length : 0;
+		completedCountText.textContent = `${count} selected`;
+		Array.from(sessionExerciseList.querySelectorAll('button')).forEach(button => {
+			const selected = payload && payload.completed_exercise_ids.includes(button.dataset.exerciseId);
+			button.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${selected ? 'active' : ''}`;
+			const badge = button.querySelector('.badge');
+			if (badge) {
+				badge.className = `badge ${selected ? 'bg-light text-dark' : 'bg-secondary'}`;
+				badge.textContent = selected ? 'Included' : 'Excluded';
+			}
+		});
+	}
+
+	function getAllExerciseIds() {
+		const ids = [];
+		const seen = new Set();
+		exerciseRowsForSession.forEach(row => {
+			const exerciseId = row.getAttribute('data-exercise-id');
+			if (exerciseId && !seen.has(exerciseId)) {
+				seen.add(exerciseId);
+				ids.push(exerciseId);
+			}
+		});
+		return ids;
+	}
+
+	function includeAllExercises() {
+		const payload = ensureSessionPayload();
+		if (!payload) {
+			return;
+		}
+		payload.completed_exercise_ids = getAllExerciseIds();
+		updateCompletedExerciseSummary();
+		queueAutosave();
+	}
+
+	function clearExercises() {
+		const payload = ensureSessionPayload();
+		if (!payload) {
+			return;
+		}
+		payload.completed_exercise_ids = [];
+		updateCompletedExerciseSummary();
+		queueAutosave();
+	}
+
+	function toggleExerciseCompletion(exerciseId) {
+		const payload = ensureSessionPayload();
+		if (!payload) {
+			return;
+		}
+		const items = new Set(payload.completed_exercise_ids);
+		if (items.has(exerciseId)) {
+			items.delete(exerciseId);
+		} else {
+			items.add(exerciseId);
+		}
+		payload.completed_exercise_ids = Array.from(items);
+		updateCompletedExerciseSummary();
+		queueAutosave();
+	}
+
+	function renderTabataHistory() {
+		const payload = ensureSessionPayload();
+		tabataHistory.innerHTML = '';
+		if (!payload || !payload.tabatas.length) {
+			tabataHistory.innerHTML = '<div class="list-group-item text-muted">No tabatas recorded yet.</div>';
+			return;
+		}
+		payload.tabatas.forEach((item, index) => {
+			const div = document.createElement('div');
+			div.className = 'list-group-item';
+			div.textContent = `#${index + 1} · ${item.rounds} rounds · ${item.work_seconds}s work / ${item.rest_seconds}s rest`;
+			tabataHistory.appendChild(div);
+		});
+	}
+
+	async function sendSessionUpdate(url, payload) {
+		const resp = await fetch(url, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+		if (!resp.ok) {
+			throw new Error('Unable to save workout session.');
+		}
+		const data = await resp.json();
+		workoutSession = data.session;
+		updateSessionControls();
+		return data.session;
+	}
+
+	function queueAutosave() {
+		if (!workoutSession) {
+			return;
+		}
+		clearTimeout(autosaveTimeout);
+		autosaveTimeout = setTimeout(() => {
+			const payload = ensureSessionPayload();
+			payload.notes = sessionNotes.value.trim();
+			sendSessionUpdate(`/workout-session/${workoutSession.id}/save`, { feedback_data: payload }).catch(console.error);
+		}, 400);
+	}
+
+	function startTicking() {
+		stopTicking();
+		activeTickInterval = window.setInterval(() => {
+			sessionElapsed.textContent = formatDuration(getActiveElapsedSeconds());
+			if (timerMode === 'stopwatch') {
+				timerDisplay.textContent = formatDuration(getActiveElapsedSeconds());
+			}
+		}, 1000);
+	}
+
+	function stopTicking() {
+		if (activeTickInterval) {
+			window.clearInterval(activeTickInterval);
+			activeTickInterval = null;
+		}
+	}
+
+	async function startOrResumeWorkout() {
+		if (!workoutSession) {
+			const resp = await fetch(`/workout-session/${workoutId}`, { method: 'POST' });
+			const data = await resp.json();
+			workoutSession = data.session;
+			const payload = ensureSessionPayload();
+			payload.completed_exercise_ids = getAllExerciseIds();
+			renderExerciseSelections();
+			updateCompletedExerciseSummary();
+			queueAutosave();
+		} else {
+			await sendSessionUpdate(`/workout-session/${workoutSession.id}/resume`, {});
+		}
+		setActivePanel('log');
+		startTicking();
+		updateSessionControls();
+	}
+
+	async function pauseWorkout() {
+		if (!workoutSession) {
+			return;
+		}
+		sessionNotes.value = sessionNotes.value.trim();
+		const payload = ensureSessionPayload();
+		payload.notes = sessionNotes.value;
+		await sendSessionUpdate(`/workout-session/${workoutSession.id}/pause`, { feedback_data: payload });
+		stopTicking();
+		if (timerMode === 'stopwatch') {
+			timerDisplay.textContent = formatDuration(getActiveElapsedSeconds());
+		}
+	}
+
+	async function showReview() {
+		const payload = ensureSessionPayload();
+		if (!payload) {
+			return;
+		}
+		if (payload.status === 'in_progress') {
+			await pauseWorkout();
+		}
+		if (tabataState.intervalId) {
+			window.clearInterval(tabataState.intervalId);
+			tabataState.intervalId = null;
+			tabataState.running = false;
+		}
+		payload.notes = sessionNotes.value.trim();
+		reviewDuration.textContent = formatDuration(getActiveElapsedSeconds());
+		const selectedExercises = payload.completed_exercise_ids.map(id => {
+			const row = exerciseRowsForSession.find(item => item.getAttribute('data-exercise-id') === id);
+			return row ? row.getAttribute('data-exercise-name') : id;
+		});
+		reviewExercises.textContent = selectedExercises.length ? selectedExercises.join(', ') : 'No exercises selected';
+		reviewNotes.textContent = payload.notes || 'No notes';
+		reviewTabatas.textContent = `${payload.tabatas.length}`;
+		reviewTabNav.classList.remove('d-none');
+		setActivePanel('review');
+	}
+
+		async function finishWorkout() {
+		if (!workoutSession) {
+			return;
+		}
+		const payload = ensureSessionPayload();
+		payload.notes = sessionNotes.value.trim();
+		await sendSessionUpdate(`/workout-session/${workoutSession.id}/finish`, { feedback_data: payload });
+		stopTicking();
+		resetTabata();
+		reviewTabNav.classList.add('d-none');
+		setActivePanel('log');
+			startWorkoutBtn.textContent = 'Start Workout';
+			startWorkoutBtn.disabled = false;
+		}
+
+		async function discardWorkout() {
+			if (!workoutSession) {
+				return;
+			}
+			const shouldDiscard = window.confirm('Discard this workout log? This cannot be undone.');
+			if (!shouldDiscard) {
+				return;
+			}
+			const resp = await fetch(`/workout-session/${workoutSession.id}/discard`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' }
+			});
+			if (!resp.ok) {
+				throw new Error('Unable to discard workout session.');
+			}
+			window.clearTimeout(autosaveTimeout);
+			stopTicking();
+			resetTabata();
+			reviewTabNav.classList.add('d-none');
+			setActivePanel('log');
+			workoutSession = null;
+			sessionNotes.value = '';
+			renderExerciseSelections();
+			updateSessionControls();
+		}
+
+	function setTimerMode(mode) {
+		timerMode = mode;
+		timerModeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.timerMode === mode));
+		tabataConfig.classList.toggle('d-none', mode !== 'tabata');
+		if (mode === 'stopwatch') {
+			timerStateLabel.textContent = 'Stopwatch';
+			timerDisplay.textContent = formatDuration(getActiveElapsedSeconds());
+		}
+	}
+
+	function resetTabata() {
+		if (tabataState.intervalId) {
+			window.clearInterval(tabataState.intervalId);
+		}
+		tabataState = { running: false, phase: 'ready', timeLeft: 0, intervalId: null, currentRound: 0, config: null };
+		if (timerMode === 'tabata') {
+			timerStateLabel.textContent = 'Tabata Ready';
+			timerDisplay.textContent = '00:00';
+		}
+	}
+
+	function updateTabataDisplay() {
+		if (timerMode !== 'tabata') {
+			return;
+		}
+		timerStateLabel.textContent = tabataState.phase === 'countdown' ? 'Get Ready' : `${tabataState.phase.replace(/\b\w/g, c => c.toUpperCase())}${tabataState.currentRound ? ` · Round ${tabataState.currentRound}` : ''}`;
+		timerDisplay.textContent = formatDuration(tabataState.timeLeft);
+	}
+
+	function recordTabataCompletion() {
+		const payload = ensureSessionPayload();
+		if (!payload || !tabataState.config) {
+			return;
+		}
+		payload.tabatas.push({
+			rounds: tabataState.config.rounds,
+			work_seconds: tabataState.config.workSeconds,
+			rest_seconds: tabataState.config.restSeconds,
+			countdown_seconds: 10,
+			completed: true,
+			completed_at: new Date().toISOString()
+		});
+		renderTabataHistory();
+		queueAutosave();
+	}
+
+	function advanceTabata() {
+		if (!tabataState.config) {
+			resetTabata();
+			return;
+		}
+		if (tabataState.phase === 'countdown') {
+			tabataState.phase = 'work';
+			tabataState.currentRound = 1;
+			tabataState.timeLeft = tabataState.config.workSeconds;
+			beep(0.18, 1040);
+			updateTabataDisplay();
+			return;
+		}
+		if (tabataState.phase === 'work') {
+			tabataState.phase = 'rest';
+			tabataState.timeLeft = tabataState.config.restSeconds;
+			beep(0.18, 640);
+			updateTabataDisplay();
+			return;
+		}
+		if (tabataState.phase === 'rest') {
+			if (tabataState.currentRound >= tabataState.config.rounds) {
+				recordTabataCompletion();
+				resetTabata();
+				return;
+			}
+			tabataState.currentRound += 1;
+			tabataState.phase = 'work';
+			tabataState.timeLeft = tabataState.config.workSeconds;
+			beep(0.18, 1040);
+			updateTabataDisplay();
+		}
+	}
+
+	function startTabata() {
+		resetTabata();
+		tabataState.running = true;
+		tabataState.phase = 'countdown';
+		tabataState.timeLeft = 10;
+		tabataState.currentRound = 0;
+		tabataState.config = {
+			rounds: parseInt(tabataRounds.value || '5', 10),
+			workSeconds: parseInt(tabataWorkSeconds.value || '30', 10),
+			restSeconds: parseInt(tabataRestSeconds.value || '30', 10)
+		};
+		updateTabataDisplay();
+		tabataState.intervalId = window.setInterval(() => {
+			tabataState.timeLeft -= 1;
+			if (tabataState.timeLeft > 0 && tabataState.timeLeft <= 3) {
+				beep(0.08, 780);
+			}
+			if (tabataState.timeLeft <= 0) {
+				advanceTabata();
+			} else {
+				updateTabataDisplay();
+			}
+		}, 1000);
+	}
+
+	startWorkoutBtn.addEventListener('click', () => {
+		startOrResumeWorkout().catch(err => alert(err.message));
+	});
+	pauseWorkoutBtn.addEventListener('click', () => {
+		pauseWorkout().catch(err => alert(err.message));
+	});
+		finishWorkoutBtn.addEventListener('click', () => {
+			showReview().catch(err => alert(err.message));
+		});
+		discardWorkoutBtn.addEventListener('click', () => {
+			discardWorkout().catch(err => alert(err.message));
+		});
+	backToLogBtn.addEventListener('click', () => {
+		reviewTabNav.classList.add('d-none');
+		setActivePanel('log');
+	});
+	confirmFinishBtn.addEventListener('click', () => {
+		finishWorkout().then(() => {
+			window.location.reload();
+		}).catch(err => alert(err.message));
+	});
+	sessionNotes.addEventListener('input', queueAutosave);
+	sessionTabButtons.forEach(btn => {
+		btn.addEventListener('click', () => setActivePanel(btn.dataset.sessionTab));
+	});
+	timerModeButtons.forEach(btn => {
+		btn.addEventListener('click', () => setTimerMode(btn.dataset.timerMode));
+	});
+	includeAllExercisesBtn.addEventListener('click', includeAllExercises);
+	clearExercisesBtn.addEventListener('click', clearExercises);
+	tabataStartBtn.addEventListener('click', startTabata);
+	tabataResetBtn.addEventListener('click', resetTabata);
+
+	function bestEffortPause() {
+		if (!workoutSession || workoutSession.feedback_data.status !== 'in_progress') {
+			return;
+		}
+		const payload = ensureSessionPayload();
+		payload.notes = sessionNotes.value.trim();
+		if (navigator.sendBeacon) {
+			navigator.sendBeacon(`/workout-session/${workoutSession.id}/pause`, new Blob([JSON.stringify({ feedback_data: payload })], { type: 'application/json' }));
+		}
+	}
+
+	document.addEventListener('visibilitychange', () => {
+		if (document.visibilityState === 'hidden') {
+			bestEffortPause();
+		}
+	});
+	window.addEventListener('beforeunload', bestEffortPause);
+
+	renderExerciseSelections();
+	updateSessionControls();
+	if (workoutSession && workoutSession.feedback_data.status === 'paused') {
+		timerDisplay.textContent = formatDuration(getActiveElapsedSeconds());
+	}
+	if (workoutSession && workoutSession.feedback_data.status === 'in_progress') {
+		startTicking();
+	}
+	setTimerMode('stopwatch');
+
 	const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
 	const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))		
 

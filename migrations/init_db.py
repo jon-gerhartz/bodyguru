@@ -113,6 +113,22 @@ CREATE TABLE IF NOT EXISTS workout_shares (
 );
 """
 
+init_workout_email_invites = """
+CREATE TABLE IF NOT EXISTS workout_email_invites (
+    id TEXT PRIMARY KEY,
+    sender_user_id TEXT,
+    recipient_email TEXT,
+    invite_token TEXT UNIQUE,
+    workout_snapshot TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TEXT,
+    accepted_at TEXT,
+    accepted_user_id TEXT,
+    FOREIGN KEY(sender_user_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY(accepted_user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+"""
+
 # alter statements for core tables
 add_link_to_exercises = """
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS link TEXT;
@@ -262,45 +278,10 @@ init_user_preferences = """
 CREATE TABLE IF NOT EXISTS user_preferences (
     user_id TEXT,
     show_all_workouts BOOLEAN DEFAULT TRUE,
-    assistant_mode TEXT DEFAULT 'approval',
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 """
 
 add_column_video_slug = """
 ALTER TABLE exercises ADD COLUMN IF NOT EXISTS video_slug TEXT default null;
-"""
-
-add_assistant_mode_to_user_preferences = """
-ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS assistant_mode TEXT DEFAULT 'approval';
-"""
-
-init_assistant_messages = """
-CREATE TABLE IF NOT EXISTS assistant_messages (
-    id TEXT PRIMARY KEY,
-    user_id TEXT,
-    conversation_id TEXT,
-    role TEXT,
-    content TEXT,
-    mode TEXT,
-    actions_json TEXT,
-    action_results_json TEXT,
-    created_at TEXT,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-"""
-
-add_assistant_messages_conversation_id = """
-ALTER TABLE assistant_messages ADD COLUMN IF NOT EXISTS conversation_id TEXT;
-"""
-
-init_assistant_conversations = """
-CREATE TABLE IF NOT EXISTS assistant_conversations (
-    id TEXT PRIMARY KEY,
-    user_id TEXT,
-    title TEXT,
-    created_at TEXT,
-    updated_at TEXT,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
-);
 """

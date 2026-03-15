@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block main %}
+<div class="container py-5">
+	<div class="invite-split">
+		<section class="invite-panel">
+			<p class="text-uppercase small mb-2">Workout Invite</p>
+			<h1 class="page-title">{{ sender_first_name }} shared a workout with you</h1>
+			<p class="page-subtitle mb-4">Create your account to unlock the workout and start tracking it inside BodyGuru.</p>
+			<div class="content-panel p-4">
+				<div class="mb-3">
+					<span class="metric-chip">{{ workout_type or 'Custom workout' }}</span>
+					<span class="metric-chip">{{ set_count }} set{{ '' if set_count == 1 else 's' }}</span>
+					<span class="metric-chip">{{ move_count }} move{{ '' if move_count == 1 else 's' }}</span>
+				</div>
+				<h2 class="h3 mb-2">{{ workout_name }}</h2>
+				<p class="mb-0">{{ workout_description or 'A custom workout is waiting for you.' }}</p>
+			</div>
+			<div class="mt-4 text-muted small">
+				Sent by {{ sender_name }}
+			</div>
+		</section>
+		<section class="invite-panel">
+			<h2 class="h3 mb-2">Create your account</h2>
+			<p class="text-muted mb-4">Sign up with <strong>{{ recipient_email }}</strong> to open this workout immediately.</p>
+			<form action="{{ url_for('auth.signup') }}" method="post">
+				<input type="hidden" name="invite_token" value="{{ invite_token }}">
+				<div class="mb-3">
+					<label for="inviteName" class="form-label">First Name</label>
+					<input type="text" class="form-control" id="inviteName" name="name" required>
+				</div>
+				<div class="mb-3">
+					<label for="inviteEmail" class="form-label">Email</label>
+					<input type="email" class="form-control" id="inviteEmail" name="email" value="{{ recipient_email }}" required>
+				</div>
+				<div class="mb-3">
+					<label for="invitePassword" class="form-label">Password</label>
+					<input type="password" class="form-control" id="invitePassword" name="password" required>
+				</div>
+				<div class="d-grid">
+					<button type="submit" class="btn btn-primary btn-lg">Create account and view workout</button>
+				</div>
+			</form>
+			<p class="text-muted small mt-3 mb-0">The workout will be added to your account after signup.</p>
+		</section>
+	</div>
+</div>
+{% endblock %}

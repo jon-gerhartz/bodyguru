@@ -1,38 +1,636 @@
 {% extends 'base.html' %}
 {% block content %}
-	<div class='row top-div'>
-		<div class='col'>
-			{% if user['status'][0] == 'pending'%}
-				<div class="row">
-					<form id="resetForm" action="{{url_for('auth.send_pass_reset')}}" method="post" enctype="multipart/form-data">
-						<div class="alert alert-primary text-center" role="alert">
-							Registration incomplete. You need a password to login.  <a href="#" onclick="submitForm()">Click here</a> to finish signing up.
-						</div>
-					</form>
+<div class="dashboard-shell py-3 py-lg-4">
+	{% if user['status'][0] == 'pending'%}
+		<div class="row">
+			<form id="resetForm" action="{{url_for('auth.send_pass_reset')}}" method="post" enctype="multipart/form-data">
+				<div class="alert alert-primary text-center" role="alert">
+					Registration incomplete. You need a password to login. <a href="#" onclick="submitForm()">Click here</a> to finish signing up.
 				</div>
-			{% endif %}
-			<div class="row">
-				<h1>Dashboard</h1>
-				<p>Welcome back {{user['email'][0]}}</p>
+			</form>
+		</div>
+	{% endif %}
+
+	<div class="dashboard-hero mb-4">
+		<div>
+			<p class="dashboard-kicker mb-2">Training Overview</p>
+			<h1 class="dashboard-title">Dashboard</h1>
+			<p class="dashboard-subtitle mb-0">See your recent activity, training time, and muscle coverage at a glance.</p>
+		</div>
+		<form class="dashboard-controls" method="get" action="{{ url_for('main.dashboard', user_id=session['user_id']) }}">
+			<div class="control-group">
+				<label class="control-label" for="timeframe">Timeframe</label>
+				<select class="form-select" id="timeframe" name="timeframe" onchange="this.form.submit()">
+					{% for option in dashboard_data.timeframe_options %}
+						<option value="{{ option.value }}" {% if option.value == dashboard_data.timeframe_days %}selected{% endif %}>{{ option.label }}</option>
+					{% endfor %}
+				</select>
 			</div>
-		</div>
-	</div>
-	<br>
-	<div class="row text-center">
-		<div class="col">
-			<h5>Volume by Exercise Over Time</h5>
-			{% for file in files %}
-				<div>
-					<img class="img-fluid" src="{{url_for('static', filename='user_reports/'+file)}}">
+			<div class="control-group">
+				<span class="control-label">Chart Grain</span>
+				<div class="grain-toggle" role="group" aria-label="Chart grain">
+					{% for option in dashboard_data.grain_options %}
+						<input
+							class="btn-check"
+							type="radio"
+							name="grain"
+							id="grain-{{ option.value }}"
+							value="{{ option.value }}"
+							{% if option.value == dashboard_data.grain %}checked{% endif %}
+							onchange="this.form.submit()">
+						<label class="grain-pill" for="grain-{{ option.value }}">{{ option.label }}</label>
+					{% endfor %}
 				</div>
-				<br>
-			{% endfor %}
+			</div>
+		</form>
+	</div>
+
+	<div class="summary-grid mb-4">
+		<div class="summary-card">
+			<p class="summary-label">Workouts Completed</p>
+			<p class="summary-value">{{ dashboard_data.summary.workouts_completed }}</p>
+		</div>
+		<div class="summary-card">
+			<p class="summary-label">Active Training Days</p>
+			<p class="summary-value">{{ dashboard_data.summary.active_training_days }}</p>
+		</div>
+		<div class="summary-card">
+			<p class="summary-label">Total Training Time</p>
+			<p class="summary-value" data-duration-seconds="{{ dashboard_data.summary.total_training_seconds }}">0m</p>
+		</div>
+		<div class="summary-card">
+			<p class="summary-label">Average Workout Duration</p>
+			<p class="summary-value" data-duration-seconds="{{ dashboard_data.summary.average_duration_seconds }}">0m</p>
+		</div>
+		<div class="summary-card">
+			<p class="summary-label">Days Since Last Workout</p>
+			<p class="summary-value">
+				{% if dashboard_data.summary.days_since_last_workout is not none %}
+					{{ dashboard_data.summary.days_since_last_workout }}
+				{% else %}
+					-
+				{% endif %}
+			</p>
 		</div>
 	</div>
-	<script>
-		function submitForm(){
-			form = document.getElementById('resetForm');
+
+	<div class="dashboard-grid">
+		<section class="panel chart-panel">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Consistency</p>
+					<h2 class="panel-title">Workout Activity Trend</h2>
+				</div>
+			</div>
+			<div class="chart-frame" id="workoutTrendChart"></div>
+		</section>
+
+		<section class="panel chart-panel">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Workload</p>
+					<h2 class="panel-title">Training Time Trend</h2>
+				</div>
+			</div>
+			<div class="chart-frame" id="durationTrendChart"></div>
+		</section>
+
+		<section class="panel chart-panel panel-wide">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Coverage</p>
+					<h2 class="panel-title">Muscle Group Coverage</h2>
+				</div>
+			</div>
+			<div class="chart-frame" id="muscleCoverageChart"></div>
+		</section>
+
+		<section class="panel panel-wide">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Planning</p>
+					<h2 class="panel-title">Muscle Group Neglect Detector</h2>
+				</div>
+			</div>
+			<div class="table-responsive">
+				<table class="table dashboard-table align-middle mb-0">
+					<thead>
+						<tr>
+							<th>Muscle Group</th>
+							<th>Last Trained</th>
+							<th>Status</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for row in dashboard_data.muscle_neglect %}
+							<tr>
+								<td>{{ row.muscle_group }}</td>
+								<td>{{ row.last_trained_label }}</td>
+								<td>
+									{% if row.is_neglected %}
+										<span class="status-pill status-pill-alert">Needs attention</span>
+									{% else %}
+										<span class="status-pill">Covered</span>
+									{% endif %}
+								</td>
+							</tr>
+						{% else %}
+							<tr>
+								<td colspan="3" class="text-muted">No muscle group data available yet.</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="panel panel-wide">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">Conditioning</p>
+					<h2 class="panel-title">Tabata Metrics</h2>
+				</div>
+			</div>
+			<div class="summary-grid summary-grid-secondary mb-4">
+				<div class="summary-card summary-card-secondary">
+					<p class="summary-label">Tabata Sessions</p>
+					<p class="summary-value">{{ dashboard_data.tabata_metrics.sessions }}</p>
+				</div>
+				<div class="summary-card summary-card-secondary">
+					<p class="summary-label">Total Tabata Rounds</p>
+					<p class="summary-value">{{ dashboard_data.tabata_metrics.rounds }}</p>
+				</div>
+				<div class="summary-card summary-card-secondary">
+					<p class="summary-label">Total Tabata Work Time</p>
+					<p class="summary-value" data-duration-seconds="{{ dashboard_data.tabata_metrics.work_seconds }}">0m</p>
+				</div>
+			</div>
+			<div class="chart-frame chart-frame-short" id="tabataTrendChart"></div>
+		</section>
+
+		<section class="panel panel-wide">
+			<div class="panel-header">
+				<div>
+					<p class="panel-kicker">History</p>
+					<h2 class="panel-title">Recent Workouts</h2>
+				</div>
+			</div>
+			<div class="table-responsive">
+				<table class="table dashboard-table align-middle mb-0">
+					<thead>
+						<tr>
+							<th>Date</th>
+							<th>Workout</th>
+							<th>Duration</th>
+							<th>Exercises</th>
+							<th>Tabatas</th>
+							<th>Notes</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for workout in dashboard_data.recent_workouts %}
+							<tr>
+								<td><span data-local-datetime="{{ workout.date }}"></span></td>
+								<td>{{ workout.workout_name }}</td>
+								<td data-duration-seconds="{{ workout.duration_seconds }}">0m</td>
+								<td>{{ workout.exercise_count }}</td>
+								<td>{{ workout.tabata_count }}</td>
+								<td>{% if workout.has_notes %}Yes{% else %}-{% endif %}</td>
+							</tr>
+						{% else %}
+							<tr>
+								<td colspan="6" class="text-muted">No completed workouts in this timeframe yet.</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script>
+	const dashboardData = {{ dashboard_data|tojson }};
+
+	function submitForm(){
+		const form = document.getElementById('resetForm');
+		if (form) {
 			form.submit();
 		}
-	</script>
+	}
+
+	function formatDuration(seconds) {
+		const totalSeconds = Number(seconds || 0);
+		if (!totalSeconds) {
+			return '0m';
+		}
+		const totalMinutes = Math.round(totalSeconds / 60);
+		const hours = Math.floor(totalMinutes / 60);
+		const minutes = totalMinutes % 60;
+		if (hours && minutes) {
+			return `${hours}h ${minutes}m`;
+		}
+		if (hours) {
+			return `${hours}h`;
+		}
+		return `${minutes}m`;
+	}
+
+	function formatChartLabel(value, grain) {
+		if (!value) {
+			return '';
+		}
+		if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
+			const parts = String(value).split('-').map(Number);
+			const parsed = new Date(parts[0], parts[1] - 1, parts[2]);
+			if (grain === 'weekly') {
+				return `Week of ${parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+			}
+			return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+		}
+		if (grain === 'monthly') {
+			const parts = String(value).split('-');
+			if (parts.length === 2) {
+				const parsed = new Date(Number(parts[0]), Number(parts[1]) - 1, 1);
+				return parsed.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+			}
+			return value;
+		}
+		const parsed = parseServerTimestamp(value);
+		if (!parsed) {
+			return value;
+		}
+		if (grain === 'weekly') {
+			return `Week of ${parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+		}
+		return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+	}
+
+	function applyDurationFormatting(root=document) {
+		root.querySelectorAll('[data-duration-seconds]').forEach((el) => {
+			el.textContent = formatDuration(el.getAttribute('data-duration-seconds'));
+		});
+	}
+
+	function buildLineChart(containerId, labels, values, seriesName, color, formatter) {
+		const el = document.getElementById(containerId);
+		if (!el) {
+			return null;
+		}
+		const chart = echarts.init(el);
+		chart.setOption({
+			animationDuration: 500,
+			grid: { left: 48, right: 24, top: 24, bottom: 36 },
+			tooltip: {
+				trigger: 'axis',
+				backgroundColor: '#0f172a',
+				borderWidth: 0,
+				textStyle: { color: '#f8fafc' },
+				valueFormatter: formatter
+			},
+			xAxis: {
+				type: 'category',
+				data: labels,
+				axisLabel: {
+					color: '#99a8bf',
+					formatter: (value) => formatChartLabel(value, dashboardData.grain)
+				},
+				axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.22)' } }
+			},
+			yAxis: {
+				type: 'value',
+				axisLabel: { color: '#99a8bf' },
+				splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.14)' } }
+			},
+			series: [{
+				name: seriesName,
+				type: 'line',
+				smooth: true,
+				symbolSize: 8,
+				data: values,
+				lineStyle: { width: 3, color: color },
+				itemStyle: { color: color },
+				areaStyle: {
+					color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+						{ offset: 0, color: color + '55' },
+						{ offset: 1, color: color + '08' }
+					])
+				}
+			}]
+		});
+		return chart;
+	}
+
+	function buildBarChart(containerId, labels, values) {
+		const el = document.getElementById(containerId);
+		if (!el) {
+			return null;
+		}
+		const chart = echarts.init(el);
+		chart.setOption({
+			animationDuration: 500,
+			grid: { left: 48, right: 24, top: 24, bottom: 56 },
+			tooltip: {
+				trigger: 'axis',
+				backgroundColor: '#0f172a',
+				borderWidth: 0,
+				textStyle: { color: '#f8fafc' }
+			},
+			xAxis: {
+				type: 'category',
+				data: labels,
+				axisLabel: {
+					color: '#99a8bf',
+					interval: 0,
+					rotate: labels.length > 6 ? 30 : 0
+				},
+				axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.22)' } }
+			},
+			yAxis: {
+				type: 'value',
+				axisLabel: { color: '#99a8bf' },
+				splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.14)' } }
+			},
+			series: [{
+				type: 'bar',
+				barWidth: '48%',
+				data: values,
+				itemStyle: {
+					borderRadius: [10, 10, 0, 0],
+					color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+						{ offset: 0, color: '#0f766e' },
+						{ offset: 1, color: '#14b8a6' }
+					])
+				}
+			}]
+		});
+		return chart;
+	}
+
+	document.addEventListener('DOMContentLoaded', () => {
+		renderLocalDateTimes();
+		applyDurationFormatting();
+
+		const charts = [];
+		charts.push(buildLineChart(
+			'workoutTrendChart',
+			dashboardData.workout_trend.labels,
+			dashboardData.workout_trend.data,
+			'Workouts',
+			'#2563eb',
+			(value) => `${value} workouts`
+		));
+		charts.push(buildLineChart(
+			'durationTrendChart',
+			dashboardData.duration_trend.labels,
+			dashboardData.duration_trend.data,
+			'Minutes',
+			'#ea580c',
+			(value) => `${value} minutes`
+		));
+		charts.push(buildBarChart(
+			'muscleCoverageChart',
+			dashboardData.muscle_coverage.labels,
+			dashboardData.muscle_coverage.data
+		));
+		charts.push(buildLineChart(
+			'tabataTrendChart',
+			dashboardData.tabata_metrics.trend.labels,
+			dashboardData.tabata_metrics.trend.data,
+			'Tabata Rounds',
+			'#7c3aed',
+			(value) => `${value} rounds`
+		));
+
+		window.addEventListener('resize', () => {
+			charts.filter(Boolean).forEach((chart) => chart.resize());
+		});
+	});
+</script>
+<style>
+	.dashboard-shell {
+		--dash-bg: linear-gradient(135deg, rgba(8, 18, 33, 0.92) 0%, rgba(11, 25, 43, 0.96) 55%, rgba(8, 30, 46, 0.9) 100%);
+		--dash-panel: rgba(10, 22, 39, 0.88);
+		--dash-border: rgba(148, 163, 184, 0.18);
+		--dash-text: #e5edf8;
+		--dash-muted: #99a8bf;
+		--dash-accent: #fb923c;
+		--dash-shadow: 0 20px 45px rgba(2, 8, 23, 0.28);
+		background: var(--dash-bg);
+		border-radius: 32px;
+		padding: 1.5rem;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+	}
+
+	.dashboard-hero {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1.5rem;
+		align-items: flex-end;
+		justify-content: space-between;
+	}
+
+	.dashboard-kicker,
+	.panel-kicker,
+	.summary-label,
+	.control-label {
+		font-size: 0.75rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--dash-muted);
+	}
+
+	.dashboard-title {
+		font-size: clamp(2rem, 4vw, 3.4rem);
+		line-height: 0.95;
+		margin-bottom: 0.4rem;
+		color: var(--dash-text);
+	}
+
+	.dashboard-subtitle {
+		max-width: 38rem;
+		color: var(--dash-muted);
+		font-size: 1rem;
+	}
+
+	.dashboard-controls {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+		align-items: flex-end;
+		padding: 1rem;
+		border: 1px solid var(--dash-border);
+		border-radius: 22px;
+		background: rgba(7, 17, 31, 0.74);
+		backdrop-filter: blur(10px);
+	}
+
+	.control-group {
+		min-width: 190px;
+	}
+
+	.grain-toggle {
+		display: inline-flex;
+		padding: 0.25rem;
+		border-radius: 999px;
+		background: rgba(148, 163, 184, 0.12);
+		gap: 0.25rem;
+	}
+
+	.grain-pill {
+		padding: 0.5rem 0.9rem;
+		border-radius: 999px;
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--dash-muted);
+		cursor: pointer;
+		margin-bottom: 0;
+	}
+
+	.btn-check:checked + .grain-pill {
+		background: rgba(56, 189, 248, 0.14);
+		color: var(--dash-text);
+		box-shadow: 0 8px 18px rgba(2, 8, 23, 0.24);
+	}
+
+	.summary-grid {
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	.summary-grid-secondary {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.summary-card,
+	.panel {
+		background: var(--dash-panel);
+		border: 1px solid var(--dash-border);
+		border-radius: 24px;
+		box-shadow: var(--dash-shadow);
+	}
+
+	.summary-card {
+		padding: 1.2rem 1.25rem;
+	}
+
+	.summary-card-secondary {
+		background: rgba(249, 115, 22, 0.08);
+	}
+
+	.summary-value {
+		font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+		line-height: 1;
+		font-weight: 700;
+		color: var(--dash-text);
+		margin: 0;
+	}
+
+	.dashboard-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+	}
+
+	.panel {
+		padding: 1.25rem;
+	}
+
+	.panel-wide {
+		grid-column: 1 / -1;
+	}
+
+	.panel-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+	}
+
+	.panel-title {
+		margin: 0;
+		font-size: 1.35rem;
+		color: var(--dash-text);
+	}
+
+	.chart-frame {
+		height: 320px;
+	}
+
+	.chart-frame-short {
+		height: 240px;
+	}
+
+	.dashboard-table thead th {
+		font-size: 0.8rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--dash-muted);
+		border-bottom-width: 1px;
+	}
+
+	.dashboard-table tbody td {
+		color: var(--dash-text);
+		vertical-align: middle;
+	}
+
+	.status-pill {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.35rem 0.7rem;
+		border-radius: 999px;
+		background: rgba(34, 197, 94, 0.16);
+		color: #86efac;
+		font-size: 0.85rem;
+		font-weight: 600;
+	}
+
+	.status-pill-alert {
+		background: rgba(239, 68, 68, 0.18);
+		color: #fca5a5;
+	}
+
+	@media (max-width: 991px) {
+		.summary-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.summary-grid-secondary {
+			grid-template-columns: 1fr;
+		}
+
+		.dashboard-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.dashboard-shell {
+			padding: 1rem;
+			border-radius: 24px;
+		}
+
+		.dashboard-controls {
+			width: 100%;
+		}
+
+		.control-group {
+			width: 100%;
+		}
+
+		.summary-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.chart-frame {
+			height: 280px;
+		}
+	}
+</style>
 {% endblock %}
