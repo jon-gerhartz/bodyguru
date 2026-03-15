@@ -4,8 +4,8 @@ import json
 from datetime import datetime
 from lib.crud import *
 from lib.data_meta import *
+from lib.dashboard import build_dashboard_context
 from lib.email import send_workout_invite_email
-from lib.reports import run_report_flow
 from utils.app_functions import auth_required
 from werkzeug.utils import secure_filename
 from utils.storage import get_storage_config, get_s3_client, get_bucket_name, presign_get_url
@@ -134,8 +134,20 @@ def index():
 def dashboard(user_id):
     user = get_user(user_id)
     logs = get_workout_logs(user_id)
-    files = run_report_flow(logs, user_id)
-    return render_template('dashboard.html', user=user, logs=logs, files=files)
+    exercises = get_exercises(user_id)
+    timeframe_days = request.args.get('timeframe', default=7, type=int)
+    grain = request.args.get('grain', default='daily', type=str)
+    dashboard_data = build_dashboard_context(
+        logs,
+        exercises,
+        timeframe_days=timeframe_days,
+        grain=grain
+    )
+    return render_template(
+        'dashboard.html',
+        user=user,
+        dashboard_data=dashboard_data
+    )
 
 
 @main.route('/library', methods=['GET', 'POST'])
