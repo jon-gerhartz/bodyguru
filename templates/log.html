@@ -22,8 +22,13 @@
 
 				{% for i, v in logs.iterrows() %}
 					<tr id="{{i}}">
-						<td tag="created_at" parentId="{{i}}">{{v['completed_at']|fmt_dt_str("%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%d %I:%M %p"
-							)}}</td>
+						<td tag="created_at" parentId="{{i}}">
+							{% if v['completed_at'] %}
+								<span data-local-datetime="{{ v['completed_at'] }}"></span>
+							{% else %}
+								<span class="badge text-bg-warning">In progress</span>
+							{% endif %}
+						</td>
 						<td>{{v['workout_name']|capitalize()}}</td>
 						<td><a href="{{url_for('main.log_details', log_id=v['id'])}}">See More</a></td>
 					</tr>
@@ -83,6 +88,7 @@
 <script type="text/javascript" >
 	window.onload = function loadPageOptions() {
 		getOptions('{{url_for('main.get_workouts_json')}}', 'workout', true, true,'id');
+		renderLocalDateTimes();
 	};
 
 	var feedbackJson = {};

@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, abort
 from exp.landing import landing_data
 import json
+from datetime import datetime
 from lib.crud import *
 from lib.data_meta import *
 from lib.email import send_workout_invite_email
@@ -18,6 +19,103 @@ def allowed_video_file(filename):
 
 
 main = Blueprint('main', __name__)
+
+
+def _utcnow_iso():
+    return datetime.utcnow().replace(microsecond=0).isoformat() + 'Z'
+
+
+def _parse_iso_datetime(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace('Z', ''))
+    except ValueError:
+        return None
+
+
+def _default_session_payload():
+    return {
+        'status': 'in_progress',
+        'started_at': _utcnow_iso(),
+        'last_resumed_at': _utcnow_iso(),
+        'finished_at': None,
+        'active_duration_seconds': 0,
+        'paused_duration_seconds': 0,
+        'notes': '',
+        'completed_exercise_ids': [],
+        'tabatas': []
+    }
+
+
+def _normalize_session_payload(payload):
+    data = payload if isinstance(payload, dict) else {}
+    normalized = _default_session_payload()
+    normalized.update({
+        'status': data.get('status') or normalized['status'],
+        'started_at': data.get('started_at') or normalized['started_at'],
+        'last_resumed_at': data.get('last_resumed_at'),
+        'finished_at': data.get('finished_at'),
+        'active_duration_seconds': int(data.get('active_duration_seconds') or 0),
+        'paused_duration_seconds': int(data.get('paused_duration_seconds') or 0),
+        'notes': data.get('notes') or '',
+        'completed_exercise_ids': [str(item) for item in (data.get('completed_exercise_ids') or []) if str(item).strip()],
+        'tabatas': data.get('tabatas') or []
+    })
+    if normalized['status'] not in ['in_progress', 'paused', 'completed']:
+        normalized['status'] = 'in_progress'
+    if not isinstance(normalized['tabatas'], list):
+        normalized['tabatas'] = []
+    return normalized
+
+
+def _load_session_payload(feedback_data):
+    try:
+        payload = json.loads(feedback_data) if feedback_data else {}
+    except json.JSONDecodeError:
+        payload = {}
+    return _normalize_session_payload(payload)
+
+
+def _serialize_session_payload(payload):
+    return json.dumps(_normalize_session_payload(payload))
+
+
+def _latest_workout_session(user_id, workout_id):
+    logs_df = get_workout_logs_for_workout_user(user_id, workout_id, limit=10)
+    if logs_df.empty:
+        return None
+    for _, row in logs_df.iterrows():
+        payload = _load_session_payload(row.get('feedback_data'))
+        row_data = {
+            'id': row['id'],
+            'workout_id': row['workout_id'],
+            'feedback_data': payload,
+            'completed_at': row.get('completed_at'),
+            'created_at': row.get('created_at')
+        }
+        if payload.get('status') in ['in_progress', 'paused']:
+            return row_data
+    return None
+
+
+def _hydrate_session_for_render(session_row):
+    if not session_row:
+        return None
+    payload = _normalize_session_payload(session_row['feedback_data'])
+    if payload.get('status') == 'in_progress':
+        last_resumed_at = _parse_iso_datetime(payload.get('last_resumed_at'))
+        if last_resumed_at:
+            now = datetime.utcnow()
+            delta = max(int((now - last_resumed_at).total_seconds()), 0)
+            payload['active_duration_seconds'] = int(payload.get('active_duration_seconds') or 0) + delta
+            payload['last_resumed_at'] = None
+            payload['status'] = 'paused'
+            update_workout_log(session_row['id'], _serialize_session_payload(payload), completed_at=None)
+    return {
+        'id': session_row['id'],
+        'feedback_data': payload
+    }
 
 
 @main.route('/', methods=['GET', 'POST'])
@@ -249,12 +347,24 @@ def workout_details(workout_id):
             if exercise_name not in exercise_names:
                 exercise_names.append(exercise_name)
     exercise_df = get_exercises_by_names(exercise_names)
-    exercise_lookup = dict(zip(exercise_df["name"], exercise_df["video_slug"]))
+    exercise_lookup = {}
+    exercise_meta = {}
+    if not exercise_df.empty:
+        exercise_lookup = dict(zip(exercise_df["name"], exercise_df["video_slug"]))
+        exercise_meta = {
+            row["name"]: {"id": str(row["id"]), "video_slug": row["video_slug"]}
+            for _, row in exercise_df.iterrows()
+        }
+    current_session = _hydrate_session_for_render(
+        _latest_workout_session(session['user_id'], workout_id)
+    )
     return render_template(
         'workout_details.html',
         workout=workout,
         workout_data=workout_data,
-        exercise_lookup=exercise_lookup
+        exercise_lookup=exercise_lookup,
+        exercise_meta=exercise_meta,
+        current_session=current_session
     )
 
 
@@ -518,6 +628,106 @@ def workout_invite(invite_token):
     )
 
 
+@main.route('/workout-session/<workout_id>', methods=['POST'])
+@auth_required
+def start_workout_session(workout_id):
+    user_id = session['user_id']
+    workout_df = get_workout(workout_id, user_id=user_id)
+    if workout_df.empty:
+        return {'error': 'Workout not found.'}, 404
+    current_session = _latest_workout_session(user_id, workout_id)
+    if current_session:
+        hydrated = _hydrate_session_for_render(current_session)
+        return {'session': hydrated}, 200
+    payload = _default_session_payload()
+    log_id = create_workout_log(workout_id, user_id, _serialize_session_payload(payload), completed_at_value=None)
+    return {'session': {'id': log_id, 'feedback_data': payload}}, 201
+
+
+@main.route('/workout-session/<log_id>', methods=['GET'])
+@auth_required
+def get_workout_session(log_id):
+    log_df = get_workout_log(log_id)
+    if log_df.empty:
+        return {'error': 'Workout session not found.'}, 404
+    log_row = log_df.iloc[0]
+    if log_row['user_id'] != session['user_id']:
+        return {'error': 'Workout session not available.'}, 404
+    payload = _load_session_payload(log_row.get('feedback_data'))
+    return {'session': {'id': log_row['id'], 'feedback_data': payload}}, 200
+
+
+@main.route('/workout-session/<log_id>/save', methods=['POST'])
+@auth_required
+def save_workout_session(log_id):
+    log_df = get_workout_log(log_id)
+    if log_df.empty:
+        return {'error': 'Workout session not found.'}, 404
+    if log_df['user_id'].iloc[0] != session['user_id']:
+        return {'error': 'Workout session not available.'}, 404
+    payload = request.get_json(silent=True) or {}
+    session_payload = _normalize_session_payload(payload.get('feedback_data') or payload)
+    update_workout_log(log_id, _serialize_session_payload(session_payload), completed_at=None)
+    return {'session': {'id': log_id, 'feedback_data': session_payload}}, 200
+
+
+@main.route('/workout-session/<log_id>/pause', methods=['POST'])
+@auth_required
+def pause_workout_session(log_id):
+    log_df = get_workout_log(log_id)
+    if log_df.empty:
+        return {'error': 'Workout session not found.'}, 404
+    if log_df['user_id'].iloc[0] != session['user_id']:
+        return {'error': 'Workout session not available.'}, 404
+    incoming = request.get_json(silent=True) or {}
+    payload = _normalize_session_payload(incoming.get('feedback_data') or _load_session_payload(log_df['feedback_data'].iloc[0]))
+    if payload.get('status') == 'in_progress' and payload.get('last_resumed_at'):
+        last_resumed_at = _parse_iso_datetime(payload.get('last_resumed_at'))
+        if last_resumed_at:
+            payload['active_duration_seconds'] += max(int((datetime.utcnow() - last_resumed_at).total_seconds()), 0)
+    payload['last_resumed_at'] = None
+    payload['status'] = 'paused'
+    update_workout_log(log_id, _serialize_session_payload(payload), completed_at=None)
+    return {'session': {'id': log_id, 'feedback_data': payload}}, 200
+
+
+@main.route('/workout-session/<log_id>/resume', methods=['POST'])
+@auth_required
+def resume_workout_session(log_id):
+    log_df = get_workout_log(log_id)
+    if log_df.empty:
+        return {'error': 'Workout session not found.'}, 404
+    if log_df['user_id'].iloc[0] != session['user_id']:
+        return {'error': 'Workout session not available.'}, 404
+    payload = _load_session_payload(log_df['feedback_data'].iloc[0])
+    payload['status'] = 'in_progress'
+    payload['last_resumed_at'] = _utcnow_iso()
+    update_workout_log(log_id, _serialize_session_payload(payload), completed_at=None)
+    return {'session': {'id': log_id, 'feedback_data': payload}}, 200
+
+
+@main.route('/workout-session/<log_id>/finish', methods=['POST'])
+@auth_required
+def finish_workout_session(log_id):
+    log_df = get_workout_log(log_id)
+    if log_df.empty:
+        return {'error': 'Workout session not found.'}, 404
+    if log_df['user_id'].iloc[0] != session['user_id']:
+        return {'error': 'Workout session not available.'}, 404
+    payload = request.get_json(silent=True) or {}
+    session_payload = _normalize_session_payload(payload.get('feedback_data') or payload)
+    if session_payload.get('status') == 'in_progress' and session_payload.get('last_resumed_at'):
+        last_resumed_at = _parse_iso_datetime(session_payload.get('last_resumed_at'))
+        if last_resumed_at:
+            session_payload['active_duration_seconds'] += max(int((datetime.utcnow() - last_resumed_at).total_seconds()), 0)
+    session_payload['last_resumed_at'] = None
+    session_payload['finished_at'] = _utcnow_iso()
+    session_payload['status'] = 'completed'
+    finished_at = datetime.utcnow()
+    update_workout_log(log_id, _serialize_session_payload(session_payload), completed_at=finished_at)
+    return {'session': {'id': log_id, 'feedback_data': session_payload}}, 200
+
+
 @main.route('/log', methods=['GET', 'POST'])
 @auth_required
 def logs():
@@ -543,7 +753,31 @@ def logs():
 def log_details(log_id):
     log = get_workout_log(log_id)
     log['feedback_data_json'] = log['feedback_data'].apply(json.loads)
-    return render_template('log_details.html', log=log)
+    feedback_data = log['feedback_data_json'][0] if not log.empty else {}
+    session_view = None
+    if isinstance(feedback_data, dict) and 'completed_exercise_ids' in feedback_data:
+        payload = _normalize_session_payload(feedback_data)
+        exercises_df = get_exercises(user_id=session['user_id'])
+        exercise_lookup = {}
+        if not exercises_df.empty:
+            exercise_lookup = {
+                str(row['id']): row['name']
+                for _, row in exercises_df.iterrows()
+            }
+        session_view = {
+            'status': payload.get('status', 'completed'),
+            'duration_seconds': payload.get('active_duration_seconds', 0),
+            'notes': payload.get('notes', ''),
+            'completed_exercises': [
+                {
+                    'id': exercise_id,
+                    'name': exercise_lookup.get(exercise_id, exercise_id)
+                }
+                for exercise_id in payload.get('completed_exercise_ids', [])
+            ],
+            'tabatas': payload.get('tabatas', [])
+        }
+    return render_template('log_details.html', log=log, session_view=session_view)
 
 
 @main.route('/delete_log/<log_id>', methods=['POST'])

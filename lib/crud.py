@@ -126,10 +126,12 @@ def get_workout_log(log_id):
     return df
 
 
-def create_workout_log(workout_id, user_id, feedback_data, past_date=''):
+def create_workout_log(workout_id, user_id, feedback_data, past_date='', completed_at_value='__auto__'):
     log_id = str(uuid.uuid4())
     created_at = datetime.now()
-    if past_date == '':
+    if completed_at_value != '__auto__':
+        completed_at = completed_at_value
+    elif past_date == '':
         completed_at = datetime.now()
     else:
 
@@ -137,7 +139,20 @@ def create_workout_log(workout_id, user_id, feedback_data, past_date=''):
         completed_at = dt_obj.strftime('%Y-%m-%dT%H:%M:%S.%f')
     execute_query(q_create_workout_log, id=log_id, workout_id=workout_id,
                   user_id=user_id, feedback_data=feedback_data, created_at=created_at, completed_at=completed_at)
-    return 'done'
+    return log_id
+
+
+def get_workout_logs_for_workout_user(user_id, workout_id, limit=10):
+    limit_val = int(limit) if str(limit).isdigit() else 10
+    q_get_workout_logs_formatted = q_get_workout_logs_for_workout_user.format(
+        user_id=user_id, workout_id=workout_id, limit=limit_val)
+    df = execute_pd(q_get_workout_logs_formatted)
+    return df
+
+
+def update_workout_log(log_id, feedback_data, completed_at=None):
+    execute_query(q_update_workout_log, id=log_id, feedback_data=feedback_data, completed_at=completed_at)
+    return 'updated'
 
 
 def delete_workout_log_item(log_id):
@@ -315,12 +330,12 @@ def get_workout_types():
 # workout exercise lookup
 def get_exercises_by_names(names):
     if not names:
-        return pd.DataFrame(columns=["name", "video_slug"])
+        return pd.DataFrame(columns=["id", "name", "video_slug"])
     stmt = text(q_get_exercises_by_names).bindparams(bindparam("names", expanding=True))
     with Session() as session:
         result = session.execute(stmt, {"names": list(names)})
         rows = result.fetchall()
-        return pd.DataFrame(rows, columns=["name", "video_slug"])
+        return pd.DataFrame(rows, columns=["id", "name", "video_slug"])
 
 # crud functions for password reset
 

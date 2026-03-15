@@ -44,6 +44,52 @@ async function getOptions(url, land_id, required=false, showDefaultText=false, v
 		land.dataset.optionsLoaded = 'true'
 	}
 
+function parseServerTimestamp(value) {
+		if (!value) {
+			return null
+		}
+		let normalized = String(value).trim()
+		if (!normalized) {
+			return null
+		}
+		if (!/[zZ]|[+-]\d{2}:\d{2}$/.test(normalized)) {
+			normalized = `${normalized}Z`
+		}
+		const match = normalized.match(/\.(\d+)(Z|[+-]\d{2}:\d{2})$/)
+		if (match && match[1].length > 3) {
+			normalized = normalized.replace(/\.(\d+)(Z|[+-]\d{2}:\d{2})$/, `.${match[1].slice(0, 3)}${match[2]}`)
+		}
+		const parsed = new Date(normalized)
+		if (Number.isNaN(parsed.getTime())) {
+			return null
+		}
+		return parsed
+}
+
+function formatLocalDateTime(value) {
+		const parsed = parseServerTimestamp(value)
+		if (!parsed) {
+			return ''
+		}
+		return new Intl.DateTimeFormat(undefined, {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: 'numeric',
+			minute: '2-digit'
+		}).format(parsed)
+}
+
+function renderLocalDateTimes(root=document) {
+		root.querySelectorAll('[data-local-datetime]').forEach((el) => {
+			const raw = el.getAttribute('data-local-datetime')
+			const formatted = formatLocalDateTime(raw)
+			if (formatted) {
+				el.textContent = formatted
+			}
+		})
+}
+
 async function loadItem(url) {
 		const resp = await fetch(url)
 		const jsonData = await resp.json() 

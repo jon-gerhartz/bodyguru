@@ -280,11 +280,14 @@ SELECT
 FROM workout_logs wl
 LEFT JOIN workouts w on w.id = wl.workout_id
 WHERE wl.user_id = '{user_id}'  and wl.deleted = 0
+ORDER BY COALESCE(wl.completed_at, wl.created_at) DESC
 """
 
 q_get_workout_log = """
 SELECT
 	wl.id
+    ,wl.user_id
+    ,wl.workout_id
 	,w.name as workout_name
 	,wl.feedback_data
     ,wl.completed_at
@@ -303,6 +306,28 @@ q_delete_workout_log = """
 UPDATE workout_logs
 SET deleted = 1
 WHERE id = '{log_id}'
+"""
+
+q_get_workout_logs_for_workout_user = """
+SELECT
+    wl.id,
+    wl.workout_id,
+    wl.feedback_data,
+    wl.completed_at,
+    wl.created_at
+FROM workout_logs wl
+WHERE wl.user_id = '{user_id}'
+  AND wl.workout_id = '{workout_id}'
+  AND wl.deleted = 0
+ORDER BY wl.created_at DESC
+LIMIT {limit}
+"""
+
+q_update_workout_log = """
+UPDATE workout_logs
+SET feedback_data = :feedback_data,
+    completed_at = :completed_at
+WHERE id = :id
 """
 
 # queries for user
@@ -409,6 +434,7 @@ SELECT distinct id, name from exercise_equipment;
 
 q_get_exercises_by_names = """
 SELECT
+    id,
     name,
     video_slug
 FROM exercises

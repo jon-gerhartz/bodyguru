@@ -7,6 +7,11 @@ def fmt_dt(ts, fmt_str):
 
 
 def fmt_dt_str(dt_str, dt_str_fmt, fmt_to):
-    dt_obj = datetime.strptime(dt_str, dt_str_fmt)
+    if not dt_str:
+        return ''
+    normalized = str(dt_str)
+    if normalized.endswith('Z') and '%z' not in dt_str_fmt:
+        normalized = normalized[:-1]
+    dt_obj = datetime.strptime(normalized, dt_str_fmt)
     fmtd_dt = dt_obj.strftime(fmt_to)
     return fmtd_dt
