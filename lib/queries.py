@@ -98,14 +98,30 @@ SELECT
 	,b.name as type
 	,a.description
 	,a.workout_data
-    ,c.user_id is null as is_default_workout
+    ,not exists (
+        SELECT 1
+        FROM user_workouts uw
+        WHERE uw.workout_id = a.id
+          AND uw.user_id = '{user_id}'
+    ) as is_default_workout
     ,u.name as shared_from_name
 FROM workouts a
 JOIN workout_types b on b.id = a.workout_type_id
-LEFT JOIN user_workouts c on c.workout_id = a.id
 LEFT JOIN workout_shares ws on ws.accepted_workout_id = a.id and ws.receiver_user_id = '{user_id}' and ws.status = 'accepted'
 LEFT JOIN users u on u.id = ws.sender_user_id
-WHERE (c.user_id = '{user_id}' or c.user_id is null) and deleted = 0;
+WHERE (
+    EXISTS (
+        SELECT 1
+        FROM user_workouts uw
+        WHERE uw.workout_id = a.id
+          AND uw.user_id = '{user_id}'
+    )
+    OR NOT EXISTS (
+        SELECT 1
+        FROM user_workouts uw
+        WHERE uw.workout_id = a.id
+    )
+) and deleted = 0;
 """
 
 q_get_workout = """
@@ -117,11 +133,15 @@ FROM (
 		,b.name as type
 		,a.description
 		,a.workout_data
-        ,c.user_id is null as is_default_workout
+        ,not exists (
+            SELECT 1
+            FROM user_workouts uw
+            WHERE uw.workout_id = a.id
+              AND uw.user_id = '{user_id}'
+        ) as is_default_workout
         ,u.name as shared_from_name
 	FROM workouts a
 	JOIN workout_types b on b.id = a.workout_type_id
-    LEFT JOIN user_workouts c on c.workout_id = a.id
     LEFT JOIN workout_shares ws on ws.accepted_workout_id = a.id and ws.receiver_user_id = '{user_id}' and ws.status = 'accepted'
     LEFT JOIN users u on u.id = ws.sender_user_id) aa
 WHERE {lookup_col} = '{lookup_val}'
@@ -159,13 +179,6 @@ q_update_workout_meta = """
 UPDATE workouts
 SET name = :name,
     description = :description
-WHERE id = :id
-"""
-
-q_update_assistant_message_actions = """
-UPDATE assistant_messages
-SET actions_json = :actions_json,
-    action_results_json = :action_results_json
 WHERE id = :id
 """
 
@@ -270,8 +283,8 @@ VALUES (:id, :email, :password_hash, :created_at, :name, :status_id)
 """
 
 q_set_user_preferences = """
-INSERT INTO user_preferences(user_id, show_all_workouts, assistant_mode)
-VALUES( :user_id, :show_all_workouts, :assistant_mode)
+INSERT INTO user_preferences(user_id, show_all_workouts)
+VALUES( :user_id, :show_all_workouts)
 """
 
 q_update_user = """
@@ -316,114 +329,8 @@ q_get_user_preferences = """
 SELECT
 	user_id
     , show_all_workouts
-    , assistant_mode
 FROM user_preferences
 WHERE user_id = '{user_id}'
-"""
-
-q_update_user_preferences_mode = """
-UPDATE user_preferences
-SET assistant_mode = :assistant_mode
-WHERE user_id = :user_id
-"""
-
-# assistant messages
-q_create_assistant_message = """
-INSERT INTO assistant_messages (id, user_id, conversation_id, role, content, mode, actions_json, action_results_json, created_at)
-VALUES (:id, :user_id, :conversation_id, :role, :content, :mode, :actions_json, :action_results_json, :created_at)
-"""
-
-q_get_assistant_messages = """
-SELECT
-    id,
-    conversation_id,
-    role,
-    content,
-    mode,
-    actions_json,
-    action_results_json,
-    created_at
-FROM assistant_messages
-WHERE user_id = '{user_id}'
-ORDER BY created_at DESC
-LIMIT {limit}
-"""
-
-q_get_assistant_messages_by_conversation = """
-SELECT
-    id,
-    conversation_id,
-    role,
-    content,
-    mode,
-    actions_json,
-    action_results_json,
-    created_at
-FROM assistant_messages
-WHERE user_id = '{user_id}'
-  AND conversation_id = '{conversation_id}'
-ORDER BY created_at DESC
-LIMIT {limit}
-"""
-
-q_create_assistant_conversation = """
-INSERT INTO assistant_conversations (id, user_id, title, created_at, updated_at)
-VALUES (:id, :user_id, :title, :created_at, :updated_at)
-"""
-
-q_get_assistant_conversations = """
-SELECT
-    id,
-    title,
-    created_at,
-    updated_at
-FROM assistant_conversations
-WHERE user_id = '{user_id}'
-ORDER BY updated_at DESC
-"""
-
-q_update_assistant_conversation_title = """
-UPDATE assistant_conversations
-SET title = :title,
-    updated_at = :updated_at
-WHERE id = :id
-"""
-
-q_touch_assistant_conversation = """
-UPDATE assistant_conversations
-SET updated_at = :updated_at
-WHERE id = :id
-"""
-
-q_get_latest_assistant_conversation = """
-SELECT
-    id,
-    title,
-    created_at,
-    updated_at
-FROM assistant_conversations
-WHERE user_id = '{user_id}'
-ORDER BY updated_at DESC
-LIMIT 1
-"""
-
-q_get_assistant_conversation = """
-SELECT
-    id,
-    title,
-    created_at,
-    updated_at
-FROM assistant_conversations
-WHERE id = '{conversation_id}'
-  AND user_id = '{user_id}'
-LIMIT 1
-"""
-
-q_update_assistant_messages_conversation_for_user = """
-UPDATE assistant_messages
-SET conversation_id = :conversation_id
-WHERE user_id = :user_id
-  AND (conversation_id IS NULL OR conversation_id = '')
 """
 
 # queries for user_workout

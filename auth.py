@@ -26,8 +26,6 @@ def login():
         user_preferences = get_user_preferences(user_id)
         show_all_workouts = user_preferences['show_all_workouts'][0]
         session['show_all_workouts'] = str(show_all_workouts)
-        assistant_mode = user_preferences['assistant_mode'][0] if 'assistant_mode' in user_preferences.columns else 'approval'
-        session['assistant_mode'] = assistant_mode or 'approval'
         return redirect(url_for('main.dashboard', user_id=user_id))
     else:
         flash(
@@ -57,8 +55,6 @@ def signup():
     user_preferences = get_user_preferences(user_id)
     show_all_workouts = user_preferences['show_all_workouts'][0]
     session['show_all_workouts'] = str(show_all_workouts)
-    assistant_mode = user_preferences['assistant_mode'][0] if 'assistant_mode' in user_preferences.columns else 'approval'
-    session['assistant_mode'] = assistant_mode or 'approval'
     return redirect(url_for('main.dashboard', user_id=user_id))
 
 
