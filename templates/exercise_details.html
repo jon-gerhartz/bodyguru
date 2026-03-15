@@ -9,8 +9,13 @@
 	<br>
 	<div class='row'>
 		<div class='col'>
-			<h1>{{exercise['name'][0]}}</h1>
-			<form method="post" action="{{ url_for('main.details', exercise_id=exercise['id'][0]) }}">
+			<div class="page-header">
+				<div>
+					<h1 class="page-title">{{exercise['name'][0]}}</h1>
+					<p class="page-subtitle mb-0">Update the exercise description, review its media, or remove it from your library.</p>
+				</div>
+			</div>
+			<form method="post" action="{{ url_for('main.details', exercise_id=exercise['id'][0]) }}" class="content-panel p-4">
 				<div class="mb-3">
 					<textarea name="description" class="form-control" rows="4">{{ exercise['description'][0] }}</textarea>
 				</div>
@@ -44,7 +49,7 @@
         <div class="col text-center">
             <video controls
                    class="mx-auto d-block"
-                   style="max-width:400px; width:100%; height:auto;"
+                   style="max-width:400px; width:100%; height:auto; border-radius: 20px;"
                    preload="metadata">
                 <source src="{{ url_for('main.video', filename=exercise['video_slug'][0]) }}" type="{{ video_type }}">
                 Your browser does not support HTML5 video.

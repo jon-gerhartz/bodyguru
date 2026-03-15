@@ -138,12 +138,13 @@ function createFilters(dataCols, colData, landId, search=true){
 	if (!land) {
 		return
 	}
+	land.innerHTML = ''
 	const existingFilter = land.querySelector('#filterInnerDiv')
 	if (existingFilter) {
 		existingFilter.remove()
 	}
 	const filterDiv = document.createElement('div')
-	filterDiv.classList.add("collapse")
+	filterDiv.classList.add("collapse", "filter-popout-panel")
 	filterDiv.setAttribute('id', 'filterInnerDiv')
 	const dataColsLength = dataCols.length
 	if (search){
@@ -202,6 +203,13 @@ function createFilters(dataCols, colData, landId, search=true){
 
 function createDateFilter(dataCols, colData, landId, search=true){
 	const land = document.getElementById(landId)
+	if (!land) {
+		return
+	}
+	land.innerHTML = ''
+	const filterDiv = document.createElement('div')
+	filterDiv.classList.add("collapse", "filter-popout-panel")
+	filterDiv.setAttribute('id', 'filterInnerDiv')
 	const dataColsLength = dataCols.length
 	if (search){
 		let search = document.createElement('input')
@@ -210,9 +218,9 @@ function createDateFilter(dataCols, colData, landId, search=true){
 		search.setAttribute('type','search')
 		search.setAttribute('placeholder','search by name')
 		search.setAttribute('onkeyup', "searchResults(this)")
-		land.appendChild(search)
+		filterDiv.appendChild(search)
 		let br = document.createElement('br')
-		land.appendChild(br)
+		filterDiv.appendChild(br)
 	}
 	
 	for (let i=0; i< dataColsLength; i++){
@@ -231,14 +239,16 @@ function createDateFilter(dataCols, colData, landId, search=true){
 		col.classList.add('col')
 		let dateInput = document.createElement('input')
 		dateInput.setAttribute('type', 'date')
+		dateInput.classList.add('form-control')
 		dateInput.setAttribute('filterObj', filterItem)
 		dateInput.setAttribute('onchange', "filterDateResults(this)")
 		col.appendChild(dateInput)
 		row.appendChild(col)	
 		let br = document.createElement('br')
-		land.appendChild(row)
-		land.appendChild(br)
+		filterDiv.appendChild(row)
+		filterDiv.appendChild(br)
 	}
+	land.appendChild(filterDiv)
 };
 
 
@@ -289,7 +299,7 @@ function searchResults(self){
 		var ele = document.getElementById(parentId);
 		var setVal = set.innerHTML.toLowerCase();
 			if (setVal.includes(searchStr)){
-				ele.style.display = 'block';
+				ele.style.display = ele.tagName === 'TR' ? 'table-row' : 'block';
 			} 
 			else {
 				ele.style.display = 'none';

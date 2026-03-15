@@ -1,8 +1,12 @@
 {% extends 'base.html' %}
 {% block main %}
 <div class="container mt-4">
-    <h1 class="mb-3">Exercise Video Admin</h1>
-    <p class="text-muted">Upload multiple videos at once. Each file maps to its exercise row.</p>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title mb-0">Exercise Video Admin</h1>
+            <p class="page-subtitle mb-0">Upload multiple videos at once. Each file maps to its exercise row.</p>
+        </div>
+    </div>
     <div class="row mb-3">
         <div class="col-md-6">
             <input id="exerciseFilter" type="text" class="form-control" placeholder="Filter exercises by name">
@@ -17,7 +21,7 @@
         </div>
     </div>
     <form method="POST" enctype="multipart/form-data">
-        <div class="table-responsive">
+        <div class="table-responsive p-3">
             <table class="table table-striped align-middle" id="exerciseTable">
                 <thead>
                     <tr>

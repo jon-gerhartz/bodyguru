@@ -3,23 +3,32 @@
 <div class="container-fluid">
 	<div class='row top-div'>
 		<div class='col'>
-			<h1>Workouts</h1>
-			<p>Create, edit and execute your custom workouts</p>
+			<div class="page-header">
+				<div>
+					<h1 class="page-title">Workouts</h1>
+					<p class="page-subtitle mb-0">Create, edit and execute your custom workouts.</p>
+				</div>
+			</div>
 		</div>
 	</div>
 	<br>
 	<div class='row'>
-		<div class='col-sm-2 side-div order-md-0 order-1', id='filterDiv'>
-			<button class="btn btn-dark" type="button" data-bs-toggle="collapse" data-bs-target="#filterInnerDiv" aria-expanded="true" aria-controls="#filterInnerDiv">
-				Filter Items
-			</button>
-			<br>
-			<br>
-		</div>
-		<div class='col-sm-8 order-md-1 order-2'>
+		<div class='col-12 col-lg-8 mx-auto'>
+			<div class="filter-toolbar">
+				<div class="filter-search">
+					<input class="form-control" type="search" placeholder="Search workouts" onkeyup="searchResults(this)">
+				</div>
+				<button class="btn btn-dark filter-toggle filter-trigger-btn" type="button" data-bs-toggle="collapse" data-bs-target="#filterInnerDiv" aria-expanded="false" aria-controls="filterInnerDiv" aria-label="Filter workouts" title="Filter workouts">
+					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+						<path d="M6 10.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm7-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+						<path d="M1 10.5a.5.5 0 0 1 .5-.5H3a.5.5 0 0 1 0 1H1.5a.5.5 0 0 1-.5-.5zm0-5A.5.5 0 0 1 1.5 5H10a.5.5 0 0 1 0 1H1.5A.5.5 0 0 1 1 5.5zm9 5a.5.5 0 0 1 .5-.5H14.5a.5.5 0 0 1 0 1H10.5a.5.5 0 0 1-.5-.5z"/>
+					</svg>
+				</button>
+			</div>
+			<div class="filter-popout" id='filterDiv'></div>
 			{% for i, v in workouts.iterrows() %}
-				<div id="{{v['name']}}" class='row' style='padding-bottom: 15px;'>
-					<div class="card" style="border:none;background-color: #f5f5f5;">
+				<div id="{{v['name']}}" class='row pb-3'>
+					<div class="card list-card">
 						<div class="card-body">
 							<h5 class="card-title" name="{{v['name']}}" parentId="{{v['name']}}" searchtag='resultData'>{{v['name']}}</h5>
 							<p class="card-text">{{v['description']}}</p>
@@ -39,6 +48,6 @@
 </div>
 <script type="text/javascript" src="{{url_for('static', filename='js/scripts.js')}}"></script>
 <script>
-	createFilters({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv');
+	createFilters({{data_cols | tojson | safe}}, {{col_data | tojson | safe}}, 'filterDiv', false);
 </script>
 {% endblock %}

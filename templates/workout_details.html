@@ -3,22 +3,23 @@
 <div class="container-fluid">
 	<div class='row top-div'>
 		<div class='col'>
-			<h1>{{workout['name'][0]}}</h1>
-			<p>{{workout['description'][0]}}</p>
+			<h1 class="page-title">{{workout['name'][0]}}</h1>
+			<p class="page-subtitle">{{workout['description'][0]}}</p>
 			{% if workout['shared_from_name'][0] %}
 				<span class="badge text-bg-secondary">Shared from {{ workout['shared_from_name'][0] }}</span>
 			{% endif %}
 		</div>
 		<div class="col-md-auto mt-3 mt-md-0">
-			<div class="d-flex gap-2 justify-content-md-end">
-				<button type="button" class="btn btn-primary" id="startWorkoutBtn">
-					{{ 'Resume Workout' if current_session else 'Start Workout' }}
-				</button>
-				<button type="button" class="btn btn-outline-secondary d-none" id="pauseWorkoutBtn">Pause</button>
-				<button type="button" class="btn btn-success d-none" id="finishWorkoutBtn">Finish Workout</button>
+				<div class="d-flex gap-2 justify-content-md-end">
+					<button type="button" class="btn btn-primary" id="startWorkoutBtn">
+						{{ 'Resume Workout' if current_session else 'Start Workout' }}
+					</button>
+					<button type="button" class="btn btn-outline-secondary d-none" id="pauseWorkoutBtn">Pause</button>
+					<button type="button" class="btn btn-success d-none" id="finishWorkoutBtn">Finish Workout</button>
+					<button type="button" class="btn btn-outline-danger d-none" id="discardWorkoutBtn">Discard</button>
+				</div>
 			</div>
 		</div>
-	</div>
 	<div class="row mt-3 {% if not current_session %}d-none{% endif %}" id="workoutSessionRow">
 		<div class="col">
 			<div class="card border-primary shadow-sm">
@@ -69,7 +70,7 @@
 								<button type="button" class="btn btn-outline-primary" data-timer-mode="tabata">Tabata</button>
 							</div>
 						</div>
-						<div class="border rounded-3 p-4 mb-3 text-center bg-light">
+						<div class="border rounded-4 p-4 mb-3 text-center bg-light">
 							<div class="text-uppercase text-muted small mb-2" id="timerStateLabel">Stopwatch</div>
 							<div class="display-4 mb-0" id="timerDisplay">00:00</div>
 						</div>
@@ -349,9 +350,10 @@
 	const workoutId = {{ workout['id'][0] | tojson }};
 	const sessionRow = document.getElementById('workoutSessionRow');
 	const startWorkoutBtn = document.getElementById('startWorkoutBtn');
-	const pauseWorkoutBtn = document.getElementById('pauseWorkoutBtn');
-	const finishWorkoutBtn = document.getElementById('finishWorkoutBtn');
-	const sessionStatusText = document.getElementById('sessionStatusText');
+		const pauseWorkoutBtn = document.getElementById('pauseWorkoutBtn');
+		const finishWorkoutBtn = document.getElementById('finishWorkoutBtn');
+		const discardWorkoutBtn = document.getElementById('discardWorkoutBtn');
+		const sessionStatusText = document.getElementById('sessionStatusText');
 	const sessionElapsed = document.getElementById('sessionElapsed');
 	const sessionNotes = document.getElementById('sessionNotes');
 	const sessionExerciseList = document.getElementById('sessionExerciseList');
@@ -465,17 +467,19 @@
 		const payload = ensureSessionPayload();
 		const hasSession = !!payload;
 		sessionRow.classList.toggle('d-none', !hasSession);
-		if (!hasSession) {
-			startWorkoutBtn.textContent = 'Start Workout';
-			pauseWorkoutBtn.classList.add('d-none');
-			finishWorkoutBtn.classList.add('d-none');
-			return;
-		}
-		const isRunning = payload.status === 'in_progress';
-		startWorkoutBtn.textContent = isRunning ? 'Workout Running' : 'Resume Workout';
-		startWorkoutBtn.disabled = isRunning;
-		pauseWorkoutBtn.classList.toggle('d-none', !isRunning);
-		finishWorkoutBtn.classList.remove('d-none');
+			if (!hasSession) {
+				startWorkoutBtn.textContent = 'Start Workout';
+				pauseWorkoutBtn.classList.add('d-none');
+				finishWorkoutBtn.classList.add('d-none');
+				discardWorkoutBtn.classList.add('d-none');
+				return;
+			}
+			const isRunning = payload.status === 'in_progress';
+			startWorkoutBtn.textContent = isRunning ? 'Workout Running' : 'Resume Workout';
+			startWorkoutBtn.disabled = isRunning;
+			pauseWorkoutBtn.classList.toggle('d-none', !isRunning);
+			finishWorkoutBtn.classList.remove('d-none');
+			discardWorkoutBtn.classList.remove('d-none');
 		sessionStatusText.textContent = payload.status.replace('_', ' ').replace(/\b\w/g, char => char.toUpperCase());
 		sessionElapsed.textContent = formatDuration(getActiveElapsedSeconds());
 		sessionNotes.value = payload.notes || '';
@@ -698,7 +702,7 @@
 		setActivePanel('review');
 	}
 
-	async function finishWorkout() {
+		async function finishWorkout() {
 		if (!workoutSession) {
 			return;
 		}
@@ -709,9 +713,35 @@
 		resetTabata();
 		reviewTabNav.classList.add('d-none');
 		setActivePanel('log');
-		startWorkoutBtn.textContent = 'Start Workout';
-		startWorkoutBtn.disabled = false;
-	}
+			startWorkoutBtn.textContent = 'Start Workout';
+			startWorkoutBtn.disabled = false;
+		}
+
+		async function discardWorkout() {
+			if (!workoutSession) {
+				return;
+			}
+			const shouldDiscard = window.confirm('Discard this workout log? This cannot be undone.');
+			if (!shouldDiscard) {
+				return;
+			}
+			const resp = await fetch(`/workout-session/${workoutSession.id}/discard`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' }
+			});
+			if (!resp.ok) {
+				throw new Error('Unable to discard workout session.');
+			}
+			window.clearTimeout(autosaveTimeout);
+			stopTicking();
+			resetTabata();
+			reviewTabNav.classList.add('d-none');
+			setActivePanel('log');
+			workoutSession = null;
+			sessionNotes.value = '';
+			renderExerciseSelections();
+			updateSessionControls();
+		}
 
 	function setTimerMode(mode) {
 		timerMode = mode;
@@ -824,9 +854,12 @@
 	pauseWorkoutBtn.addEventListener('click', () => {
 		pauseWorkout().catch(err => alert(err.message));
 	});
-	finishWorkoutBtn.addEventListener('click', () => {
-		showReview().catch(err => alert(err.message));
-	});
+		finishWorkoutBtn.addEventListener('click', () => {
+			showReview().catch(err => alert(err.message));
+		});
+		discardWorkoutBtn.addEventListener('click', () => {
+			discardWorkout().catch(err => alert(err.message));
+		});
 	backToLogBtn.addEventListener('click', () => {
 		reviewTabNav.classList.add('d-none');
 		setActivePanel('log');

@@ -740,6 +740,21 @@ def finish_workout_session(log_id):
     return {'session': {'id': log_id, 'feedback_data': session_payload}}, 200
 
 
+@main.route('/workout-session/<log_id>/discard', methods=['POST'])
+@auth_required
+def discard_workout_session(log_id):
+    log_df = get_workout_log(log_id)
+    if log_df.empty:
+        return {'error': 'Workout session not found.'}, 404
+    if log_df['user_id'].iloc[0] != session['user_id']:
+        return {'error': 'Workout session not available.'}, 404
+    payload = _load_session_payload(log_df['feedback_data'].iloc[0])
+    if payload.get('status') == 'completed':
+        return {'error': 'Completed workout logs cannot be discarded from this page.'}, 400
+    delete_workout_log_item(log_id)
+    return {'ok': True}, 200
+
+
 @main.route('/log', methods=['GET', 'POST'])
 @auth_required
 def logs():

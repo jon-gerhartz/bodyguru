@@ -3,14 +3,18 @@
 <div class="container-fluid">
 	<div class='row top-div'>
 		<div class='col'>
-			<h1>{{log['workout_name'][0]}}</h1>
-			<p>
-				{% if log['completed_at'][0] %}
-					<span data-local-datetime="{{ log['completed_at'][0] }}"></span>
-				{% else %}
-					<span class="badge text-bg-warning">In progress</span>
-				{% endif %}
-			</p>
+			<div class="page-header">
+				<div>
+					<h1 class="page-title">{{log['workout_name'][0]}}</h1>
+					<p class="page-subtitle mb-0">
+						{% if log['completed_at'][0] %}
+							<span data-local-datetime="{{ log['completed_at'][0] }}"></span>
+						{% else %}
+							<span class="badge text-bg-warning">In progress</span>
+						{% endif %}
+					</p>
+				</div>
+			</div>
 		</div>
 	</div>
 	<br>
