@@ -1,7 +1,7 @@
 from lib.crud import get_user_auth, create_user, update_pass, create_pass_reset_request, get_pass_reset_user, get_user_preferences
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from utils.app_functions import generate_password_hash, check_password
-from lib.sendgrid import send_reset_email
+from lib.email import send_reset_email
 import pandas as pd
 
 auth = Blueprint('auth', __name__)
