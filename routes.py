@@ -367,16 +367,13 @@ def workout_details(workout_id):
             row["name"]: {"id": str(row["id"]), "video_slug": row["video_slug"]}
             for _, row in exercise_df.iterrows()
         }
-    current_session = _hydrate_session_for_render(
-        _latest_workout_session(session['user_id'], workout_id)
-    )
     return render_template(
         'workout_details.html',
         workout=workout,
         workout_data=workout_data,
         exercise_lookup=exercise_lookup,
         exercise_meta=exercise_meta,
-        current_session=current_session
+        current_session=None
     )
 
 
@@ -649,8 +646,11 @@ def start_workout_session(workout_id):
         return {'error': 'Workout not found.'}, 404
     current_session = _latest_workout_session(user_id, workout_id)
     if current_session:
-        hydrated = _hydrate_session_for_render(current_session)
-        return {'session': hydrated}, 200
+        payload = _normalize_session_payload(current_session.get('feedback_data'))
+        payload['status'] = 'in_progress'
+        payload['last_resumed_at'] = _utcnow_iso()
+        update_workout_log(current_session['id'], _serialize_session_payload(payload), completed_at=None)
+        return {'session': {'id': current_session['id'], 'feedback_data': payload}}, 200
     payload = _default_session_payload()
     log_id = create_workout_log(workout_id, user_id, _serialize_session_payload(payload), completed_at_value=None)
     return {'session': {'id': log_id, 'feedback_data': payload}}, 201

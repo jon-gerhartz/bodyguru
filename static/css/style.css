@@ -89,6 +89,97 @@ a:hover {
   font-weight: 700;
 }
 
+.brand-logo {
+  height: 45px;
+  width: auto;
+}
+
+.mobile-bottom-nav {
+  position: fixed;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: calc(0.6rem + env(safe-area-inset-bottom));
+  z-index: 1085;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  background: rgba(7, 17, 31, 0.92);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-soft);
+}
+
+.mobile-bottom-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.mobile-bottom-link:hover,
+.mobile-bottom-link:focus {
+  color: #fff;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.mobile-bottom-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.mobile-create-wrap {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.mobile-create-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: none;
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  box-shadow: 0 10px 20px rgba(2, 8, 23, 0.45);
+}
+
+.mobile-create-menu {
+  position: absolute;
+  bottom: calc(100% + 0.55rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 170px;
+  padding: 0.35rem;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: rgba(7, 17, 31, 0.98);
+  box-shadow: var(--shadow-soft);
+}
+
+.mobile-create-item {
+  display: block;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.mobile-create-item:hover,
+.mobile-create-item:focus {
+  color: #fff;
+  background: rgba(148, 163, 184, 0.12);
+}
+
 .nav-link {
   border-radius: 999px;
   padding: 0.55rem 0.9rem !important;
@@ -491,6 +582,10 @@ a:hover {
   padding-bottom: 1rem;
 }
 
+.list-card.is-clickable {
+  cursor: pointer;
+}
+
 .library-controls {
   position: sticky;
   top: var(--library-controls-top, 0px);
@@ -719,6 +814,12 @@ a:hover {
   color: #fb923c;
 }
 
+.home-hero-logo {
+  max-width: clamp(220px, 30vw, 420px);
+  width: 100%;
+  height: auto;
+}
+
 .landing-container {
   padding-top: 200px;
 }
@@ -765,10 +866,25 @@ a:hover {
 .exercise-row {
   cursor: pointer;
   transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  max-width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.exercise-row > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .exercise-row:hover {
   transform: translateY(-1px);
+}
+
+.workout-action-row {
+  align-items: center;
 }
 
 .accordion-button:not(.collapsed) {
@@ -777,11 +893,34 @@ a:hover {
 
 .navbar-toggler {
   border-color: var(--border-soft);
+  margin-left: auto;
 }
 
 @media (max-width: 991px) {
   .app-nav-shell {
-    border-radius: 28px;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: none;
+    justify-content: flex-end;
+    padding: 0.2rem 0.25rem;
+  }
+
+  .brand-logo {
+    height: 36px;
+  }
+
+  .is-authenticated .app-main {
+    padding-bottom: 6.5rem;
+  }
+
+  .navbar-collapse {
+    margin-top: 0.6rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    background: rgba(7, 17, 31, 0.94);
   }
 
   .invite-split {
@@ -816,8 +955,29 @@ a:hover {
     font-size: 1.8rem;
   }
 
+  .home-hero-logo {
+    max-width: min(68vw, 300px);
+  }
+
+  .exercise-row {
+    width: 100%;
+  }
+
+  .workout-action-row {
+    justify-content: flex-start;
+  }
+
+  .workout-action-row .btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
   .app-nav-shell {
-    max-width: calc(100vw - 1rem);
-    padding: 0.85rem 1rem;
+    max-width: calc(100vw - 0.6rem);
+  }
+
+  .mobile-bottom-nav {
+    left: 0.5rem;
+    right: 0.5rem;
   }
 }

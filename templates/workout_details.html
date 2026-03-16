@@ -3,23 +3,29 @@
 <div class="container-fluid">
 	<div class='row top-div'>
 		<div class='col'>
+			<nav aria-label="breadcrumb" class="mb-2">
+				<ol class="breadcrumb mb-1">
+					<li class="breadcrumb-item"><a href="{{ url_for('main.workouts') }}">Workouts</a></li>
+					<li class="breadcrumb-item active" aria-current="page">{{ workout['name'][0] }}</li>
+				</ol>
+			</nav>
 			<h1 class="page-title">{{workout['name'][0]}}</h1>
 			<p class="page-subtitle">{{workout['description'][0]}}</p>
 			{% if workout['shared_from_name'][0] %}
 				<span class="badge text-bg-secondary">Shared from {{ workout['shared_from_name'][0] }}</span>
 			{% endif %}
 		</div>
-		<div class="col-md-auto mt-3 mt-md-0">
-				<div class="d-flex gap-2 justify-content-md-end">
-					<button type="button" class="btn btn-primary" id="startWorkoutBtn">
-						{{ 'Resume Workout' if current_session else 'Start Workout' }}
-					</button>
-					<button type="button" class="btn btn-outline-secondary d-none" id="pauseWorkoutBtn">Pause</button>
-					<button type="button" class="btn btn-success d-none" id="finishWorkoutBtn">Finish Workout</button>
-					<button type="button" class="btn btn-outline-danger d-none" id="discardWorkoutBtn">Discard</button>
+			<div class="col-md-auto mt-3 mt-md-0">
+					<div class="d-flex flex-wrap gap-2 justify-content-md-end workout-action-row">
+						<button type="button" class="btn btn-primary" id="startWorkoutBtn">
+							{{ 'Resume Workout' if current_session else 'Start Workout' }}
+						</button>
+						<button type="button" class="btn btn-outline-secondary d-none" id="pauseWorkoutBtn" aria-label="Pause" title="Pause">⏸</button>
+						<button type="button" class="btn btn-success d-none" id="finishWorkoutBtn">Finish</button>
+						<button type="button" class="btn btn-outline-danger d-none" id="discardWorkoutBtn" aria-label="Discard" title="Discard">✕</button>
+					</div>
 				</div>
 			</div>
-		</div>
 	<div class="row mt-3 {% if not current_session %}d-none{% endif %}" id="workoutSessionRow">
 		<div class="col">
 			<div class="card border-primary shadow-sm">
@@ -345,6 +351,7 @@
   </div>
 {% endblock %}
 {% block scripts %}
+{{ super() }}
 <script>
 	const initialSession = {{ current_session | tojson | safe if current_session else 'null' }};
 	const workoutId = {{ workout['id'][0] | tojson }};
@@ -475,7 +482,7 @@
 				return;
 			}
 			const isRunning = payload.status === 'in_progress';
-			startWorkoutBtn.textContent = isRunning ? 'Workout Running' : 'Resume Workout';
+			startWorkoutBtn.textContent = isRunning ? 'Running' : 'Resume Workout';
 			startWorkoutBtn.disabled = isRunning;
 			pauseWorkoutBtn.classList.toggle('d-none', !isRunning);
 			finishWorkoutBtn.classList.remove('d-none');

@@ -300,10 +300,29 @@
 							window.bootstrap.Modal.getOrCreateInstance(createExerciseModalEl).show();
 						}, 0);
 					});
-			}
+				}
+
+				function runQuickActionFromQuery() {
+					const params = new URLSearchParams(window.location.search);
+					const quickAction = params.get('quick');
+					if (!quickAction) {
+						return;
+					}
+					if (quickAction === 'create-workout' && startWorkoutBuilder) {
+						startWorkoutBuilder.click();
+					}
+					if (quickAction === 'create-exercise' && createExerciseTrigger) {
+						createExerciseTrigger.click();
+					}
+					if (window.history && window.history.replaceState) {
+						const cleanUrl = `${window.location.pathname}${window.location.hash || ''}`;
+						window.history.replaceState({}, document.title, cleanUrl);
+					}
+				}
+				window.setTimeout(runQuickActionFromQuery, 0);
 
 
-			if (workoutBuilderCancel) {
+				if (workoutBuilderCancel) {
 				workoutBuilderCancel.addEventListener('click', () => {
 					if (selectedExercises.size > 0) {
 						const confirmDiscard = window.confirm('Discard your workout selections?');
