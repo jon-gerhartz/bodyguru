@@ -281,10 +281,11 @@
 		if (!el) {
 			return null;
 		}
+		const isMobile = window.matchMedia('(max-width: 767px)').matches;
 		const chart = echarts.init(el);
 		chart.setOption({
 			animationDuration: 500,
-			grid: { left: 48, right: 24, top: 24, bottom: 36 },
+			grid: { left: isMobile ? 38 : 48, right: isMobile ? 10 : 24, top: 24, bottom: isMobile ? 54 : 36, containLabel: true },
 			tooltip: {
 				trigger: 'axis',
 				backgroundColor: '#0f172a',
@@ -297,6 +298,9 @@
 				data: labels,
 				axisLabel: {
 					color: '#99a8bf',
+					fontSize: isMobile ? 11 : 12,
+					hideOverlap: true,
+					rotate: isMobile ? 24 : 0,
 					formatter: (value) => formatChartLabel(value, dashboardData.grain)
 				},
 				axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.22)' } }
@@ -330,10 +334,11 @@
 		if (!el) {
 			return null;
 		}
+		const isMobile = window.matchMedia('(max-width: 767px)').matches;
 		const chart = echarts.init(el);
 		chart.setOption({
 			animationDuration: 500,
-			grid: { left: 48, right: 24, top: 24, bottom: 56 },
+			grid: { left: isMobile ? 38 : 48, right: isMobile ? 10 : 24, top: 24, bottom: isMobile ? 76 : 56, containLabel: true },
 			tooltip: {
 				trigger: 'axis',
 				backgroundColor: '#0f172a',
@@ -343,13 +348,13 @@
 			xAxis: {
 				type: 'category',
 				data: labels,
-				axisLabel: {
-					color: '#99a8bf',
-					interval: 0,
-					rotate: labels.length > 6 ? 30 : 0
+					axisLabel: {
+						color: '#99a8bf',
+						interval: 0,
+						rotate: isMobile ? 40 : (labels.length > 6 ? 30 : 0)
+					},
+					axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.22)' } }
 				},
-				axisLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.22)' } }
-			},
 			yAxis: {
 				type: 'value',
 				axisLabel: { color: '#99a8bf' },
@@ -371,7 +376,7 @@
 		return chart;
 	}
 
-	document.addEventListener('DOMContentLoaded', () => {
+		document.addEventListener('DOMContentLoaded', () => {
 		renderLocalDateTimes();
 		applyDurationFormatting();
 
@@ -406,10 +411,13 @@
 			(value) => `${value} rounds`
 		));
 
-		window.addEventListener('resize', () => {
-			charts.filter(Boolean).forEach((chart) => chart.resize());
+			window.addEventListener('resize', () => {
+				charts.filter(Boolean).forEach((chart) => chart.resize());
+			});
+			window.requestAnimationFrame(() => {
+				charts.filter(Boolean).forEach((chart) => chart.resize());
+			});
 		});
-	});
 </script>
 <style>
 	.dashboard-shell {
@@ -538,9 +546,10 @@
 		gap: 1rem;
 	}
 
-	.panel {
-		padding: 1.25rem;
-	}
+		.panel {
+			padding: 1.25rem;
+			min-width: 0;
+		}
 
 	.panel-wide {
 		grid-column: 1 / -1;
@@ -559,9 +568,13 @@
 		color: var(--dash-text);
 	}
 
-	.chart-frame {
-		height: 320px;
-	}
+		.chart-frame {
+			height: 320px;
+			width: 100%;
+			max-width: 100%;
+			overflow: hidden;
+			min-width: 0;
+		}
 
 	.chart-frame-short {
 		height: 240px;

@@ -15,44 +15,44 @@
 			heap.load("2638997973"); 
 		</script>
 	</head>
-	<body class="app-body">
-		<nav class="navbar navbar-expand-lg app-navbar">
-			<div class="container-fluid app-nav-shell">
-				<a class="navbar-brand" href="{{url_for('main.index')}}">
-					BodyGuru
-					<img class="navbar-brand" src="{{url_for('static', filename='img/body_guru_white.png')}}" alt="BodyGuru" height="45">
-				</a>
-				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-					<span class="navbar-toggler-icon"></span>
-				</button>
-				<div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-					{% if session.authenticated %}
-						<ul class="navbar-nav">
-							<li class='nav-item'><a class="nav-link" href="{{url_for('main.library')}}">Exercises</a></li>
-							<li class='nav-item'><a class="nav-link" href="{{url_for('main.workouts')}}">Workouts</a></li>
-							<li class='nav-item'><a class="nav-link" href="{{url_for('main.logs')}}">Logs</a></li>
-							<li class='nav-item'><a class="nav-link" href="{{url_for('main.notifications')}}">Notifications</a></li>
-							{% if session.user_email == config['ADMIN_EMAIL'] %}
-							<li class='nav-item'><a class="nav-link" href="{{url_for('admin.exercise_videos')}}">Admin</a></li>
-							{% endif %}
-						</ul>
-						<ul class="navbar-nav ms-auto">	
-							<li class="nav-item dropdown">
-								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">{{session.user_email}}</a>
-								<ul class="dropdown-menu">
-									<li><a class="dropdown-item" href="{{url_for('main.dashboard', user_id=session['user_id'])}}">Dashboard</a></li>
-									<li><a class="dropdown-item" href="{{url_for('auth.logout')}}">Logout</a></li>
-								</ul>
-							</li>
-						</ul>
-					{% else %}
-					<ul class="navbar-nav ms-auto">
-						<li class='nav-item'><a class="nav-link" href="{{url_for('main.index')}}#signupForm" onclick="return toggleLoginSignup()">Login</a></li>
-					</ul>
-					{% endif %}
+		<body class="app-body{% if session.authenticated %} is-authenticated{% endif %}">
+			<nav class="navbar navbar-expand-lg app-navbar">
+				<div class="container-fluid app-nav-shell">
+					<a class="navbar-brand d-none d-lg-inline-flex" href="{{url_for('main.index')}}">
+						<span class="brand-wordmark d-none d-lg-inline">BodyGuru</span>
+						<img class="brand-logo" src="{{url_for('static', filename='img/body_guru_white.png')}}" alt="BodyGuru" height="45">
+					</a>
+					<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+						<span class="navbar-toggler-icon"></span>
+					</button>
+					<div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+						{% if session.authenticated %}
+							<ul class="navbar-nav">
+								<li class='nav-item d-none d-lg-block'><a class="nav-link" href="{{url_for('main.library')}}">Exercises</a></li>
+								<li class='nav-item d-none d-lg-block'><a class="nav-link" href="{{url_for('main.workouts')}}">Workouts</a></li>
+								<li class='nav-item d-none d-lg-block'><a class="nav-link" href="{{url_for('main.logs')}}">Logs</a></li>
+								<li class='nav-item'><a class="nav-link" href="{{url_for('main.notifications')}}">Notifications</a></li>
+								{% if session.user_email == config['ADMIN_EMAIL'] %}
+									<li class='nav-item'><a class="nav-link" href="{{url_for('admin.exercise_videos')}}">Admin</a></li>
+								{% endif %}
+							</ul>
+							<ul class="navbar-nav ms-auto">
+								<li class="nav-item dropdown">
+									<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">{{session.user_email}}</a>
+									<ul class="dropdown-menu">
+										<li><a class="dropdown-item" href="{{url_for('main.dashboard', user_id=session['user_id'])}}">Dashboard</a></li>
+										<li><a class="dropdown-item" href="{{url_for('auth.logout')}}">Logout</a></li>
+									</ul>
+								</li>
+							</ul>
+						{% else %}
+							<ul class="navbar-nav ms-auto">
+								<li class='nav-item'><a class="nav-link" href="{{url_for('main.index')}}#signupForm" onclick="return toggleLoginSignup()">Login</a></li>
+							</ul>
+						{% endif %}
+					</div>
 				</div>
-			</div>
-		</nav>
+			</nav>
 		<div class="container app-flash-wrap">
 			{% with messages = get_flashed_messages() %}
 				{% if messages %}
@@ -62,7 +62,7 @@
 				{% endif %}
 			{% endwith %}
 		</div>
-		<main class="app-main">
+			<main class="app-main">
 			<div class="container-fluid app-main-wrap">
 				{% block main %}
 				{% endblock %}
@@ -71,11 +71,44 @@
 				{% block content %}
 				{% endblock %}
 			</div>
-		</main>
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-		<script src="{{url_for('static',filename='js/scripts.js')}}"></script>
-		{% block scripts %}
-		<script>
+			</main>
+			{% if session.authenticated %}
+				<!-- Icon attributions:
+					Exercises icon: https://www.flaticon.com/free-icons/gym (Freepik)
+					Workouts icon: https://www.flaticon.com/free-icons/runner (DinosoftLabs)
+				-->
+				<nav class="mobile-bottom-nav d-lg-none" aria-label="Mobile quick navigation">
+					<a class="mobile-bottom-link" href="{{url_for('main.dashboard', user_id=session['user_id'])}}" aria-label="Dashboard" title="Dashboard">
+						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+							<path d="M8 0a8 8 0 1 0 8 8A8 8 0 0 0 8 0zm0 1.2a6.8 6.8 0 1 1-6.8 6.8A6.8 6.8 0 0 1 8 1.2z"/>
+							<path d="M8.5 3.5a.5.5 0 0 0-1 0v4a.5.5 0 0 0 .24.43l2.6 1.56a.5.5 0 1 0 .52-.86L8.5 7.2z"/>
+						</svg>
+					</a>
+					<a class="mobile-bottom-link" href="{{url_for('main.library')}}" aria-label="Exercises" title="Exercises">
+						<img class="mobile-bottom-icon" src="https://cdn-icons-png.flaticon.com/512/3043/3043888.png" alt="" loading="lazy" decoding="async">
+					</a>
+					<div class="mobile-create-wrap">
+						<button type="button" class="mobile-create-btn" id="mobileQuickCreateToggle" aria-expanded="false" aria-controls="mobileQuickCreateMenu" aria-label="Quick create" title="Quick create">+</button>
+						<div class="mobile-create-menu" id="mobileQuickCreateMenu" hidden>
+							<a class="mobile-create-item" href="{{ url_for('main.library', quick='create-workout') }}">Create Workout</a>
+							<a class="mobile-create-item" href="{{ url_for('main.library', quick='create-exercise') }}">Create Exercise</a>
+						</div>
+					</div>
+					<a class="mobile-bottom-link" href="{{url_for('main.workouts')}}" aria-label="Workouts" title="Workouts">
+						<img class="mobile-bottom-icon" src="https://cdn-icons-png.flaticon.com/512/1869/1869315.png" alt="" loading="lazy" decoding="async">
+					</a>
+					<a class="mobile-bottom-link" href="{{url_for('main.logs')}}" aria-label="Logs" title="Logs">
+						<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+							<path d="M14 4.5V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h7.5L14 4.5zM10 2H3v12h10V5h-2.5A.5.5 0 0 1 10 4.5V2z"/>
+							<path d="M4.5 7.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1zm0 2h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1z"/>
+						</svg>
+					</a>
+				</nav>
+			{% endif %}
+			<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+			<script src="{{url_for('static',filename='js/scripts.js')}}"></script>
+			{% block scripts %}
+			<script>
 			function toggleLoginSignup(){
 				var toggle = document.getElementById("loginToggle");
 				let headline = document.getElementById("loginHeadline");
@@ -100,10 +133,35 @@
 					confirmPassDiv.removeAttribute('hidden');
 					nameDiv.removeAttribute('hidden');
 					form.setAttribute('action',"{{url_for('auth.signup')}}");
+					}
+					return false;
+				};
+
+					var mobileQuickCreateToggle = document.getElementById('mobileQuickCreateToggle');
+					var mobileQuickCreateMenu = document.getElementById('mobileQuickCreateMenu');
+					if (mobileQuickCreateToggle && mobileQuickCreateMenu && !window.__mobileQuickCreateInit) {
+						window.__mobileQuickCreateInit = true;
+						const setOpen = (open) => {
+						mobileQuickCreateMenu.hidden = !open;
+						mobileQuickCreateToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+					};
+					mobileQuickCreateToggle.addEventListener('click', (event) => {
+						event.preventDefault();
+						const isOpen = mobileQuickCreateToggle.getAttribute('aria-expanded') === 'true';
+						setOpen(!isOpen);
+					});
+					document.addEventListener('click', (event) => {
+						if (!mobileQuickCreateMenu.hidden && !event.target.closest('.mobile-create-wrap')) {
+							setOpen(false);
+						}
+					});
+					document.addEventListener('keydown', (event) => {
+						if (event.key === 'Escape') {
+							setOpen(false);
+						}
+					});
 				}
-				return false;
-			};
-		</script>
+			</script>
 		{% endblock %}
 	</body>
 </html>
